@@ -29,13 +29,21 @@ public final class Desktop {
     private(set) var title: String?
     public private(set) var session: String?
     public private(set) var window: DesktopWindow?
+    private let sessionFile: URL
+    private var sessionOwner: UUID?
 
-    public init(binary: URL, app: String, title: String?) {
-        self.binary = binary; self.app = app; self.title = title
+    public init(binary: URL, app: String, title: String?, sessionFile: URL) {
+        self.binary = binary; self.app = app; self.title = title; self.sessionFile = sessionFile
     }
 
     public func start(recording: Bool) async throws {
-        guard let result = try await call(["session", "start", "--name", "Showback"]) as? [String: Any],
+        try await recoverSession()
+        let owner = UUID()
+        try FileManager.default.createDirectory(at: sessionFile.deletingLastPathComponent(), withIntermediateDirectories: true)
+        // Persist ownership before creation, so even a lost create response can be recovered.
+        try JSONEncoder().encode(owner).write(to: sessionFile, options: .atomic)
+        sessionOwner = owner
+        guard let result = try await call(["session", "start", "--name", Self.label(owner)]) as? [String: Any],
               let id = result["session_id"] as? String else { throw Failure("Desktop returned no session ID.") }
         session = id
         let status = try await call(["permissions"])
@@ -56,9 +64,36 @@ public final class Desktop {
     }
 
     public func end() async throws {
-        guard let session else { return }
-        _ = try await call(["session", "end", session])
-        self.session = nil
+        guard sessionOwner != nil else { return }
+        if let session {
+            _ = try await call(["session", "end", session])
+            self.session = nil
+            try FileManager.default.removeItem(at: sessionFile)
+        } else {
+            try await recoverSession()
+        }
+        sessionOwner = nil
+    }
+
+    private static func label(_ owner: UUID) -> String { "Showback \(owner.uuidString)" }
+
+    private func recoverSession() async throws {
+        guard FileManager.default.fileExists(atPath: sessionFile.path) else { return }
+        let owner: UUID
+        do { owner = try JSONDecoder().decode(UUID.self, from: Data(contentsOf: sessionFile)) }
+        catch { throw Failure("Cannot read desktop session ownership at \(sessionFile.path): \(error.localizedDescription)") }
+        guard let result = try await call(["session", "list"]) as? [String: Any],
+              let sessions = result["sessions"] as? [[String: Any]] else {
+            throw Failure("Cannot recover the previous desktop session: incomplete session inventory.")
+        }
+        for entry in sessions where entry["name"] as? String == Self.label(owner) &&
+            (entry["ended_at"] == nil || entry["ended_at"] is NSNull) {
+            guard let id = entry["session_id"] as? String, !id.isEmpty else {
+                throw Failure("Cannot recover the previous desktop session: missing session ID.")
+            }
+            _ = try await call(["session", "end", id])
+        }
+        try FileManager.default.removeItem(at: sessionFile)
     }
 
     public func focus() async throws {

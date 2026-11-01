@@ -11,6 +11,11 @@ import time
 
 binary = str(Path(sys.argv[1] if len(sys.argv) > 1 else '.build/debug/showback').resolve())
 assert os.environ.get('SHOWBACK_ASSETS'), 'Set SHOWBACK_ASSETS to verified local assets.'
+def sessions():
+    result = subprocess.run([binary, 'desktop', 'session', 'list'], capture_output=True, text=True, timeout=15)
+    assert result.returncode == 0, result.stderr
+    return {entry['session_id']: entry for entry in json.loads(result.stdout)['data']['sessions']}
+before = sessions()
 with tempfile.TemporaryDirectory(prefix='showback-force-stop-') as temporary:
     root = Path(temporary) / 'run.showback'
     script = root.with_suffix('.json')
@@ -39,7 +44,20 @@ with tempfile.TemporaryDirectory(prefix='showback-force-stop-') as temporary:
         stdout, stderr = process.communicate(timeout=5)
         state = json.loads((root / 'run.json').read_text())
         assert process.returncode == 130 and state['status'] == 'running' and (root / '.incomplete').exists(), (process.returncode, stdout, stderr, state)
-        print('Second stop signal forced exit; incomplete marker and partial source preserved.')
+        forced = sessions()
+        created = [key for key in forced if key not in before]
+        assert len(created) == 1 and not forced[created[0]].get('ended_at'), forced
+        recovery_script = Path(temporary) / 'recovery.json'
+        recovery_script.write_text(json.dumps({'version': 1, 'title': 'Recovery check',
+            'app': 'Showback Nonexistent Recovery Verification App', 'scenes': [{'say': 'This must not be spoken.'}]}))
+        recovered = subprocess.run([binary, 'run', str(recovery_script), '--mute', '--live-only', '--out', str(Path(temporary) / 'recovery.showback')],
+                                   capture_output=True, text=True, timeout=20)
+        assert recovered.returncode == 1, (recovered.stdout, recovered.stderr)
+        after = sessions()
+        assert after[created[0]].get('ended_at'), 'The forced-exit desktop session was not recovered'
+        assert all(entry.get('ended_at') for key, entry in after.items() if key not in before), after
+        assert all(after[key].get('ended_at') == value.get('ended_at') for key, value in before.items()), 'An unrelated session was changed'
+        print('Second signal forced exit; the next run recovered its session and left unrelated sessions untouched.')
     finally:
         if process.poll() is None:
             process.kill()

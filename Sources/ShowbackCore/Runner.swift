@@ -10,7 +10,8 @@ import AppKit
         defer { lock.release() }
         let script = try DemoScript.load(options.script)
         let bundle = try RunBundle(root: options.output, script: options.script, title: script.title, recording: !options.liveOnly)
-        let desktop = try Desktop(binary: assets.url(for: "desktop-runtime"), app: script.app, title: script.windowTitle)
+        let desktop = try Desktop(binary: assets.url(for: "desktop-runtime"), app: script.app, title: script.windowTitle,
+                                  sessionFile: lockURL.deletingLastPathComponent().appendingPathComponent("desktop-session.json"))
         var recording: Recording?
         var presentation: Presentation?
         var stop: StopControl?
