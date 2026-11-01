@@ -81,3 +81,12 @@ Stop the virtual-display process and remove only the lock you created when finis
 The final installed self-demo contains 26.18 seconds of H.264 video and complete AAC narration. All three expected-state checks passed; five clips used the audio-device clock at zero playback volume. On-device transcription recovered every sentence through the final line.
 
 Installed app size measured 146,072 KiB (~143 MiB), including assets. Download size is approximately 134 MB. Setup time on a clean machine was not benchmarked.
+
+
+## PR review follow-up
+
+- The integrated Swift suite now has 36 passing checks; release compilation passes with warnings treated as errors.
+- `check-asset-integrity.py` first reproduced a modified runtime being blessed by a forged receipt, then passed after extracted-member hashes and sizes were pinned in the bundled manifest for both architectures. The member identities were derived from archives verified against their existing pinned archive hashes.
+- Live capture-loss verification decodes the preserved source MP4 with ffprobe after the window closes. Capture failure and output finalization are now separate states.
+- `check-signals.py` verifies a second stop signal exits immediately while retaining an incomplete marker. A subsequent real demo acquired the run lock successfully. The moved-window/occlusion rerun measured 32.7 ms UI/video lag.
+- Source install/reinstall, the intended blocked `voice-javert` download failure, preference restoration on a failed Settings launch, and fresh nested visual output paths passed their checks. Stop lookup polls observations and presses once after the precompiled helper finds the control.

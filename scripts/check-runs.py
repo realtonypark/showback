@@ -145,4 +145,6 @@ with tempfile.TemporaryDirectory(prefix="showback-runs-") as temporary:
     assert lost.returncode == 1 and state["status"] == "failed", (stdout, stderr, state)
     assert elapsed < 5, ("Capture loss did not stop narration promptly", elapsed, stdout, stderr)
     assert [event["scene"] for event in state["events"] if event["kind"] == "scene"] == [1], state
-    print("Capture loss stopped narration and prevented subsequent scenes.")
+    probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "json", str(closed_bundle / "recording.mp4")], capture_output=True, text=True, timeout=10)
+    assert probe.returncode == 0 and float(json.loads(probe.stdout)["format"]["duration"]) > 0, ("Capture-loss source was not finalized", probe.stdout, probe.stderr)
+    print("Capture loss stopped narration, finalized source video, and prevented subsequent scenes.")
