@@ -65,6 +65,9 @@ public struct Assets {
         let expected = try catalog.downloads.filter { $0.arch == nil || $0.arch == Self.architecture }
         for asset in expected {
             for file in asset.installedFiles {
+                guard FileManager.default.fileExists(atPath: root.appendingPathComponent(file.path).path) else {
+                    throw Failure("Installed asset is missing: \(file.path). Reinstall Showback.")
+                }
                 try Self.verify(root.appendingPathComponent(file.path), bytes: file.bytes, sha256: file.sha256)
             }
         }

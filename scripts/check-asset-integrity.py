@@ -29,4 +29,7 @@ with tempfile.TemporaryDirectory(prefix='showback-integrity-') as temporary:
     receipt_path.write_text(json.dumps(receipt))
     corrupted = doctor()
     assert corrupted.returncode != 0 and 'Integrity check failed for pocket-tts' in corrupted.stderr, ('Tampered runtime and receipt were trusted', corrupted.stdout, corrupted.stderr)
-print('Forged receipt cannot bless a modified runtime.')
+    runtime.unlink()
+    missing = doctor()
+    assert missing.returncode != 0 and 'Installed asset is missing: bin/pocket-tts. Reinstall Showback.' in missing.stderr, (missing.stdout, missing.stderr)
+print('Forged receipt cannot bless a modified runtime; missing assets have actionable repair errors.')
