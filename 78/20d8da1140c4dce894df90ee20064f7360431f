@@ -1,0 +1,21 @@
+scripts/check-asset-integrity.py
+  s_d04a6a7c166416::t_6e07236e1c61fe 32-35
+Sources/ShowbackCore/Assets.swift
+  s_d04a6a7c166416::t_469469cbbc0f41 68-70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7820d8da1140c4dce894df90ee20064f7360431f",
+  "prompts": {},
+  "sessions": {
+    "s_d04a6a7c166416": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19598-40dc-7f81-9484-3ecd9608fde4",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
