@@ -18,13 +18,18 @@ public final class RunBundle {
         guard !fm.fileExists(atPath: root.path) else { throw Failure("Bundle already exists: \(root.path)") }
         try fm.createDirectory(at: root.deletingLastPathComponent(), withIntermediateDirectories: true)
         try fm.createDirectory(at: root, withIntermediateDirectories: false)
-        try fm.copyItem(at: script, to: root.appendingPathComponent("script.json"))
-        try fm.createDirectory(at: root.appendingPathComponent("narration"), withIntermediateDirectories: false)
-        if recording {
-            try fm.createDirectory(at: root.appendingPathComponent("frames"), withIntermediateDirectories: false)
-            try Data().write(to: root.appendingPathComponent(".incomplete"))
+        do {
+            try fm.copyItem(at: script, to: root.appendingPathComponent("script.json"))
+            try fm.createDirectory(at: root.appendingPathComponent("narration"), withIntermediateDirectories: false)
+            if recording {
+                try fm.createDirectory(at: root.appendingPathComponent("frames"), withIntermediateDirectories: false)
+                try Data().write(to: root.appendingPathComponent(".incomplete"))
+            }
+            try save()
+        } catch {
+            try? fm.removeItem(at: root)
+            throw error
         }
-        try save()
     }
 
     func start(target: [String: Any], epoch: Double) throws {

@@ -6,10 +6,14 @@ public struct SettingsStore {
 
     public func voice(in catalog: AssetCatalog) throws -> String {
         guard FileManager.default.fileExists(atPath: url.path) else { return catalog.voices[0].id }
-        let fields = try Fields(JSONSerialization.jsonObject(with: Data(contentsOf: url)), keys: ["voice"])
-        let value = try fields.string("voice")
-        guard catalog.voices.contains(where: { $0.id == value }) else { throw Failure("Saved voice is unavailable. Select a voice in Showback Settings.") }
-        return value
+        do {
+            let fields = try Fields(JSONSerialization.jsonObject(with: Data(contentsOf: url)), keys: ["voice"])
+            let value = try fields.string("voice")
+            guard catalog.voices.contains(where: { $0.id == value }) else { throw Failure("Saved voice is unavailable.") }
+            return value
+        } catch {
+            throw Failure("Cannot load settings at \(url.path): \(error.localizedDescription) Select a voice with showback settings.")
+        }
     }
 
     public func save(voice: String, in catalog: AssetCatalog) throws {

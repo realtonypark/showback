@@ -13,9 +13,17 @@ final class RunBundleTests: XCTestCase {
             try bundle.finish(status, error: "Expected state was not reached", mediaReady: false)
             let result = try JSONSerialization.jsonObject(with: Data(contentsOf: bundle.root.appendingPathComponent("run.json"))) as! [String: Any]
             XCTAssertEqual(result["status"] as? String, status.rawValue)
+            XCTAssertEqual(result["error"] as? String, "Expected state was not reached")
             XCTAssertTrue(FileManager.default.fileExists(atPath: bundle.root.appendingPathComponent(".incomplete").path))
             XCTAssertFalse(FileManager.default.fileExists(atPath: bundle.root.appendingPathComponent("demo.mp4").path))
         }
+    }
+    func testFailedInitializationRemovesOnlyNewBundle() throws {
+        let parent = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: parent) }
+        let root = parent.appendingPathComponent("run.showback")
+        XCTAssertThrowsError(try RunBundle(root: root, script: parent.appendingPathComponent("missing.json"), title: "Example", recording: true))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.path))
     }
     func testRefusesToOverwriteExistingBundle() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

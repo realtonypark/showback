@@ -41,10 +41,11 @@ public struct Speech {
         let file = try AVAudioFile(forReading: url)
         let format = file.processingFormat
         let duration = Double(file.length) / format.sampleRate
-        guard duration.isFinite, duration > 0, duration <= 900, format.channelCount == 1, format.sampleRate == 24000,
+        guard duration.isFinite, duration > 0, format.channelCount == 1, format.sampleRate == 24000,
               let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 24000) else {
             throw Failure("Narration is not valid 24 kHz mono audio: \(url.lastPathComponent).")
         }
+        guard duration <= 900 else { throw Failure("Narration exceeds the 900 seconds limit: \(url.lastPathComponent).") }
         var audible = false
         while file.framePosition < file.length {
             try file.read(into: buffer)
