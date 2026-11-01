@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.macOS(.v15)],
     products: [.executable(name: "showback", targets: ["Showback"])],
     targets: [
-        .target(name: "ShowbackCore"),
+        .target(name: "ShowbackCore", resources: [.process("Resources")]),
         .executableTarget(name: "Showback", dependencies: ["ShowbackCore"]),
         .testTarget(name: "ShowbackCoreTests", dependencies: ["ShowbackCore"])
     ],

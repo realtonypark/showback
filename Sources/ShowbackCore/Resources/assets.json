@@ -1,0 +1,19 @@
+{
+  "model": "Pocket TTS English 18M",
+  "voices": [
+    { "id": "alba", "name": "Alba", "license": "CC BY 4.0 — Alba MacKenna" },
+    { "id": "marius", "name": "Marius", "license": "CC0 — Unmute Voice Donation Project" },
+    { "id": "javert", "name": "Javert", "license": "CC0 — Unmute Voice Donation Project" }
+  ],
+  "downloads": [
+    { "id": "model", "url": "https://huggingface.co/kyutai/pocket-tts-without-voice-cloning/resolve/a7056f505a4a8ca72d8b5fb1440071d6f1a35739/languages/english_18m_2026-10/model.safetensors", "bytes": 111728528, "sha256": "599329dcea2f2a8d17b575e1c6e11b78822453c9073040d55c26faadf4883188", "path": "speech/model.safetensors" },
+    { "id": "tokenizer", "url": "https://huggingface.co/kyutai/pocket-tts-without-voice-cloning/resolve/a7056f505a4a8ca72d8b5fb1440071d6f1a35739/languages/english_18m_2026-10/tokenizer.model", "bytes": 59339, "sha256": "d461765ae179566678c93091c5fa6f2984c31bbe990bf1aa62d92c64d91bc3f6", "path": "speech/tokenizer.model" },
+    { "id": "voice-alba", "url": "https://huggingface.co/kyutai/pocket-tts-without-voice-cloning/resolve/a7056f505a4a8ca72d8b5fb1440071d6f1a35739/languages/english_18m_2026-10/embeddings/alba.safetensors", "bytes": 4163992, "sha256": "11554cbe9f3d3a3e10722932df9952bb44928e534f7af3200524659166b5627a", "path": "speech/voices/alba.safetensors" },
+    { "id": "voice-marius", "url": "https://huggingface.co/kyutai/pocket-tts-without-voice-cloning/resolve/a7056f505a4a8ca72d8b5fb1440071d6f1a35739/languages/english_18m_2026-10/embeddings/marius.safetensors", "bytes": 4163992, "sha256": "1af5d5c612ba4229871c3132eabc91566d0aad618b202059abc734cdbc124cd7", "path": "speech/voices/marius.safetensors" },
+    { "id": "voice-javert", "url": "https://huggingface.co/kyutai/pocket-tts-without-voice-cloning/resolve/a7056f505a4a8ca72d8b5fb1440071d6f1a35739/languages/english_18m_2026-10/embeddings/javert.safetensors", "bytes": 4098456, "sha256": "f93fa41fccc890a84ea6a2222cdaed5ce7cb6fea75dec1298cf12a65810479b0", "path": "speech/voices/javert.safetensors" },
+    { "id": "speech-runtime", "arch": "arm64", "url": "https://github.com/kyutai-labs/pocket-tts/releases/download/v4.0.1/pocket-tts-3.3.0-aarch64-apple-darwin.tar.gz", "bytes": 7696220, "sha256": "ee9ca6c7c000ee72c5846e3a8ba01d08f56636d94a614d2259c3f12b8fd69afa", "files": { "pocket-tts-3.3.0-aarch64-apple-darwin/pocket-tts": "bin/pocket-tts", "pocket-tts-3.3.0-aarch64-apple-darwin/LICENSE": "notices/pocket-runtime.txt" } },
+    { "id": "speech-runtime", "arch": "x86_64", "url": "https://github.com/kyutai-labs/pocket-tts/releases/download/v4.0.1/pocket-tts-3.3.0-x86_64-apple-darwin.tar.gz", "bytes": 8376592, "sha256": "f04baa94d4fc47a689cc9f11ca2b0ba869dc002f9e78e15d387c6ecaeb1d654b", "files": { "pocket-tts-3.3.0-x86_64-apple-darwin/pocket-tts": "bin/pocket-tts", "pocket-tts-3.3.0-x86_64-apple-darwin/LICENSE": "notices/pocket-runtime.txt" } },
+    { "id": "desktop-runtime", "arch": "arm64", "url": "https://github.com/vercel-labs/agent-desktop/releases/download/v1.0.2/agent-desktop-v1.0.2-aarch64-apple-darwin.tar.gz", "bytes": 2181954, "sha256": "7bee385196d7b478de80cf05ca4304aaa38f0eba593b3406ad3c247c1773be19", "files": { "agent-desktop": "bin/agent-desktop", "agent-desktop-macos-helper": "bin/agent-desktop-macos-helper" } },
+    { "id": "desktop-runtime", "arch": "x86_64", "url": "https://github.com/vercel-labs/agent-desktop/releases/download/v1.0.2/agent-desktop-v1.0.2-x86_64-apple-darwin.tar.gz", "bytes": 2304657, "sha256": "8edda6df17eafc042395502a823dbb8415bc8ac14835a6731e4d8becc9cb4121", "files": { "agent-desktop": "bin/agent-desktop", "agent-desktop-macos-helper": "bin/agent-desktop-macos-helper" } }
+  ]
+}
