@@ -37,6 +37,31 @@ Core implementation checks are complete. This is an evidence log, not a claim th
 The build targets macOS 15+. Intel runtime assets require AVX2; Intel and macOS 15 hardware behavior remain unverified. Test fixtures are not evidence that a specific user's application or project tests pass.
 
 
+## Reproduce the Alba synthesis check
+
+From the repository root, generate a local configuration before invoking the runtime. Use an existing verified asset directory; this example uses the default installation. Python is needed only for this QA setup.
+
+```sh
+export SHOWBACK_ASSETS="$HOME/Applications/Showback.app/Contents/Resources/Assets"
+python3 - <<'PYCONFIG'
+import json
+import os
+from pathlib import Path
+assets = Path(os.environ["SHOWBACK_ASSETS"]).resolve()
+resources = Path("Sources/ShowbackCore/Resources")
+catalog = json.loads((resources / "assets.json").read_text())
+config = (resources / "speech.yaml").read_text()
+for asset_id, marker in [("model", "__MODEL_FILE__"), ("tokenizer", "__TOKENIZER_FILE__")]:
+    asset = next(item for item in catalog["downloads"] if item["id"] == asset_id)
+    config = config.replace(marker, json.dumps(str(assets / asset["path"])))
+Path(".local").mkdir(exist_ok=True)
+Path(".local/voices.yaml").write_text(config)
+PYCONFIG
+HF_HUB_OFFLINE=1 "$SHOWBACK_ASSETS/bin/pocket-tts" generate --config "$PWD/.local/voices.yaml" --voice "$SHOWBACK_ASSETS/speech/voices/alba.safetensors" --text "The account page is open. The welcome message appeared, and the check passed." --output-path "$PWD/.local/review-alba.wav"
+```
+
+The on-device transcription command above records the original local QA experiment; its checker is not a Showback runtime dependency. This setup reproduces the synthesis without that experimental checker or speaker playback.
+
 ## Reproduce controlled GUI checks
 
 From the repository root, build the CLI with `swift build -j 3` and the fixtures with `./scripts/build-fixtures.sh`. Set `SHOWBACK_ASSETS` below to an existing verified asset directory; for a default installation, use `~/Applications/Showback.app/Contents/Resources/Assets` instead of `.local/assets`. The virtual-display helper is development-only and adapted from Scrawl under its MIT license. It uses a private macOS API; it is not part of Showback.
