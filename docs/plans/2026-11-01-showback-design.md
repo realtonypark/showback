@@ -1,6 +1,6 @@
 # Showback design
 
-Status: proposed for final design confirmation. Product choices below reflect the interview. Technical choices remain subject to the explicit validation gates below.
+Status: approved for implementation. Product choices below reflect the interview. Technical choices remain subject to the explicit validation gates below.
 
 ## Purpose
 
@@ -133,4 +133,4 @@ Commit in small, reviewable steps on local `main`. Check each step before commit
 
 ## Outstanding implementation evidence
 
-The model, runtime, architecture support, minimum OS, capture/filter strategy, complete install size, setup time, and synchronization tolerance still need measurements. These are verification work, not established behavior. The proposed design requires final shared-understanding confirmation before implementation under the requested grilling workflow.
+The model, runtime, architecture support, minimum OS, capture/filter strategy, complete install size, setup time, and synchronization tolerance still need measurements. These are verification work, not established behavior. The user approved implementation and iterative build/test/fix verification.
