@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "title": "A checked browser walkthrough",
+  "app": "Showback Browser Fixture",
+  "window": { "title": "Showback Browser Fixture" },
+  "scenes": [
+    { "say": "This is a real browser page. Let's start signed out.", "actions": [{ "click": { "role": "button", "name": "Reset" } }], "expect": { "text": "Signed out" } },
+    { "say": "I'll use the sign-in button to open the account.", "actions": [{ "click": { "role": "button", "name": "Sign in" } }], "expect": { "text": "Welcome, demo user" } },
+    { "say": "The welcome message is visible. The expected state was checked before this explanation." }
+  ]
+}
