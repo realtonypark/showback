@@ -1,0 +1,14 @@
+README.md
+  h_05e5164a29872e 5-9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cae6d259f7433ef47a4a2c72353df60b6cd30de1",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
