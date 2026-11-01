@@ -34,7 +34,7 @@
 
 - [x] Download pinned official runtime/model assets and verify identities and licenses.
 - [x] Generate file audio offline; inspect duration, sample rate, samples, and synthesis time without speaker playback. Compare compact and standard models.
-- [ ] On a controlled virtual display, test window capture and presentation effects, including unrelated occluding windows. Document whether capture or composition is required.
+- [x] On a controlled virtual display, test window capture and presentation effects, including unrelated occluding windows. Document whether capture or composition is required.
 - [x] Commit measured evidence and any technical ruling.
 
 ### Task 2: Scripts and desktop execution
@@ -70,9 +70,9 @@
 **Files:** controlled native/browser fixtures, verification scripts, `docs/verification.md`.
 **Interfaces:** Installed `showback run` is the authority; fixtures never send data to real services.
 
-- [ ] Validate native and browser demos, moving targets, static screens, ambiguity, missing targets, failed expectations, synthesis errors, cancellation, and offline operation.
-- [ ] Inspect MP4 streams, frame samples, screenshots, narration, and run facts; measure synchronization to a 100 ms target and report actual results.
+- [x] Validate native and browser demos, moving targets, static screens, ambiguity, missing targets, failed expectations, synthesis errors, cancellation, and offline operation.
+- [x] Inspect MP4 streams, frame samples, screenshots, narration, and run facts; measure synchronization to a 100 ms target and report actual results.
 - [x] Run full checks and a fresh whole-branch review. Fix material findings with regression checks; commit fixes.
-- [ ] Audit every design requirement against current evidence before claiming completion.
+- [x] Audit every design requirement against current evidence before claiming completion.
 
-GUI movement, occlusion, and transition timing checks remain pending an unlocked macOS session. See `docs/verification.md` for current evidence; no claim of full completion.
+The requirement audit and measured evidence are in `docs/verification.md`. Platform limits remain explicit there.

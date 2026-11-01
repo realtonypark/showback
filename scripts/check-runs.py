@@ -19,6 +19,17 @@ with tempfile.TemporaryDirectory(prefix="showback-runs-") as temporary:
         path.write_text(json.dumps({"version": 1, "title": name, "app": "Showback Fixture", "window": {"title": "Showback Fixture"}, "scenes": scenes}))
         return path
 
+    blocked = script("speech-failure", [{"say": "This cannot be synthesized.", "actions": [{"click": {"role": "button", "name": "Increment"}}]}])
+    blocked_bundle = root / "speech-failure.showback"
+    runtime = str(Path(os.environ["SHOWBACK_ASSETS"]) / "bin/pocket-tts")
+    policy = '(version 1)(allow default)(deny process-exec (literal ' + json.dumps(runtime) + '))'
+    synthesis = subprocess.run(["/usr/bin/sandbox-exec", "-p", policy, binary, "run", str(blocked), "--mute", "--out", str(blocked_bundle)], capture_output=True, text=True, timeout=25)
+    state = json.loads((blocked_bundle / "run.json").read_text())
+    assert synthesis.returncode == 1 and state["status"] == "failed", synthesis
+    assert not state["events"] and not (blocked_bundle / "recording.mp4").exists(), state
+    assert "Preparing narration" in synthesis.stdout, (synthesis.stdout, synthesis.stderr)
+    print("Synthesis failure stopped preparation before capture or actions.", flush=True)
+
     failed_script = script("failed", [
         {"say": "Checking the expected state.", "expect": {"role": "statictext", "text": "This state must never exist", "timeout": 0.2}},
         {"say": "This later claim must not be spoken."}
@@ -112,11 +123,24 @@ with tempfile.TemporaryDirectory(prefix="showback-runs-") as temporary:
         "actions": [{"click": {"role": "button", "name": "Close"}}]
     }, {"say": "This later scene must never run."}])
     closed_bundle = root / "capture-loss.showback"
-    started = time.monotonic()
-    lost = subprocess.run([binary, "run", str(closing), "--mute", "--out", str(closed_bundle)], capture_output=True, text=True, timeout=30)
-    elapsed = time.monotonic() - started
+    lost = subprocess.Popen([binary, "run", str(closing), "--mute", "--out", str(closed_bundle)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    try:
+        deadline = time.monotonic() + 25
+        while time.monotonic() < deadline:
+            state = json.loads((closed_bundle / "run.json").read_text()) if (closed_bundle / "run.json").exists() else {}
+            if state.get("clockEpoch") is not None: break
+            assert lost.poll() is None, lost.communicate()
+            time.sleep(.05)
+        else:
+            raise AssertionError("Capture-loss presentation never started")
+        started = time.monotonic()
+        stdout, stderr = lost.communicate(timeout=15)
+        elapsed = time.monotonic() - started
+    finally:
+        if lost.poll() is None:
+            lost.kill(); lost.wait()
     state = json.loads((closed_bundle / "run.json").read_text())
-    assert lost.returncode == 1 and state["status"] == "failed", (lost, state)
-    assert elapsed < 5, ("Capture loss did not stop narration promptly", elapsed, lost.stdout, lost.stderr)
+    assert lost.returncode == 1 and state["status"] == "failed", (stdout, stderr, state)
+    assert elapsed < 5, ("Capture loss did not stop narration promptly", elapsed, stdout, stderr)
     assert [event["scene"] for event in state["events"] if event["kind"] == "scene"] == [1], state
     print("Capture loss stopped narration and prevented subsequent scenes.")
