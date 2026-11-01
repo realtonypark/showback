@@ -35,12 +35,11 @@ public enum MediaExport {
         }
         let size = try await sourceVideo.load(.naturalSize)
         let pointerImages = PointerImageCache(timeline: pointer, size: size)
-        let imageContext = CIContext(options: [.cacheIntermediates: false])
         let filters = try await AVVideoComposition.videoComposition(with: composition, applyingCIFiltersWithHandler: { request in
             let source = request.sourceImage
             if let overlay = pointerImages.image(at: request.compositionTime.seconds) {
-                request.finish(with: CIImage(cgImage: overlay).composited(over: source).cropped(to: source.extent), context: imageContext)
-            } else { request.finish(with: source, context: imageContext) }
+                request.finish(with: CIImage(cgImage: overlay).composited(over: source).cropped(to: source.extent), context: nil)
+            } else { request.finish(with: source, context: nil) }
         })
         guard let videoComposition = filters.mutableCopy() as? AVMutableVideoComposition,
               let exporter = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality) else { throw Failure("Cannot create MP4 exporter.") }
