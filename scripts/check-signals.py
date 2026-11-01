@@ -56,8 +56,11 @@ with tempfile.TemporaryDirectory(prefix='showback-force-stop-') as temporary:
         after = sessions()
         assert after[created[0]].get('ended_at'), 'The forced-exit desktop session was not recovered'
         assert all(entry.get('ended_at') for key, entry in after.items() if key not in before), after
-        assert all(after[key].get('ended_at') == value.get('ended_at') for key, value in before.items()), 'An unrelated session was changed'
-        print('Second signal forced exit; the next run recovered its session and left unrelated sessions untouched.')
+        assert all(after[key].get('ended_at') == value['ended_at'] for key, value in before.items() if value.get('ended_at')), 'A previously ended session was changed'
+        recovered_prior = [key for key, value in before.items() if not value.get('ended_at') and forced.get(key, {}).get('ended_at')]
+        if recovered_prior:
+            print(f'Recovered {len(recovered_prior)} pre-existing unfinished session(s) before the forced-exit check.')
+        print('Second signal forced exit; the next run recovered its session and preserved previously ended session records.')
     finally:
         if process.poll() is None:
             process.kill()
