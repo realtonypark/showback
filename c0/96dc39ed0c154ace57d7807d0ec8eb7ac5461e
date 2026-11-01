@@ -1,0 +1,27 @@
+CONTEXT.md
+  s_d04a6a7c166416::t_6c15c56dd5c78e 19-31
+  s_d04a6a7c166416::t_2bc1c37229602a 1-18
+docs/research/2026-11-01-foundations.md
+  s_d04a6a7c166416::t_be5bd7d8c0b4df 60
+  s_d04a6a7c166416::t_3c0676ae3f8957 63-66,93
+  s_d04a6a7c166416::t_ad2fe9b082015e 79-92
+  s_d04a6a7c166416::t_2bc1c37229602a 1-2,4-53,94-97
+  s_d04a6a7c166416::t_6c15c56dd5c78e 3,54-59,67-78
+  s_d04a6a7c166416::t_4d7ab0f2fd965d 61-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c096dc39ed0c154ace57d7807d0ec8eb7ac5461e",
+  "prompts": {},
+  "sessions": {
+    "s_d04a6a7c166416": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19598-40dc-7f81-9484-3ecd9608fde4",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
