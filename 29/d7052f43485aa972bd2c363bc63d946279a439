@@ -1,0 +1,21 @@
+Tests/ShowbackCoreTests/DesktopTests.swift
+  s_d04a6a7c166416::t_9b8692292b0d25 11-14
+Sources/ShowbackCore/Desktop.swift
+  s_d04a6a7c166416::t_2fb830402a05db 142,150-152
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "29d7052f43485aa972bd2c363bc63d946279a439",
+  "prompts": {},
+  "sessions": {
+    "s_d04a6a7c166416": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19598-40dc-7f81-9484-3ecd9608fde4",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
