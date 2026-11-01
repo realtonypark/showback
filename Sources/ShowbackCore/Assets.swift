@@ -36,7 +36,7 @@ public struct Assets {
             throw Failure("No installed asset definition for \(id) on \(Self.architecture).")
         }
         if let path = asset.path { return root.appendingPathComponent(path) }
-        guard let path = asset.files?.values.first(where: { $0.hasPrefix("bin/") && !$0.contains("helper") }) else {
+        guard let path = asset.files?.values.first(where: { $0.path.hasPrefix("bin/") && !$0.path.contains("helper") })?.path else {
             throw Failure("No executable in \(id).")
         }
         return root.appendingPathComponent(path)
@@ -64,9 +64,8 @@ public struct Assets {
         }
         let expected = try catalog.downloads.filter { $0.arch == nil || $0.arch == Self.architecture }
         for asset in expected {
-            for path in asset.paths {
-                guard let file = receipt.files[path] else { throw Failure("Installed asset is missing: \(path). Reinstall Showback.") }
-                try Self.verify(root.appendingPathComponent(path), bytes: file.bytes, sha256: asset.path == nil ? file.sha256 : asset.sha256)
+            for file in asset.installedFiles {
+                try Self.verify(root.appendingPathComponent(file.path), bytes: file.bytes, sha256: file.sha256)
             }
         }
     }
@@ -83,7 +82,6 @@ public struct Assets {
         try fm.createDirectory(at: cache, withIntermediateDirectories: true)
         try fm.createDirectory(at: root, withIntermediateDirectories: true)
         progress("Installing \(try catalog.model) · \(downloads.reduce(0) { $0 + $1.bytes } / 1_000_000) MB download")
-        var records: [String: FileReceipt] = [:]
         for (index, asset) in downloads.enumerated() {
             try Task.checkCancellation()
             progress("[\(index + 1)/\(downloads.count)] \(asset.id)")
@@ -101,20 +99,16 @@ public struct Assets {
                 try fm.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
                 try fm.copyItem(at: cached, to: destination)
             } else if let files = asset.files {
-                for (member, path) in files {
-                    let destination = root.appendingPathComponent(path)
+                for (member, file) in files {
+                    let destination = root.appendingPathComponent(file.path)
                     try fm.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
-                    let extracted = try await Command.run(URL(fileURLWithPath: "/usr/bin/tar"), ["-xOf", cached.path, member], stdoutFile: destination)
+                    let extracted = try await Command.run(URL(fileURLWithPath: "/usr/bin/tar"), ["-xOf", cached.path, member], stdoutFile: destination, outputLimit: file.bytes)
                     guard extracted.status == 0 else { throw Failure("Cannot extract \(asset.id): \(extracted.stderr)") }
-                    if path.hasPrefix("bin/") { try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: destination.path) }
+                    if file.path.hasPrefix("bin/") { try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: destination.path) }
                 }
             }
-            for path in asset.paths {
-                let url = root.appendingPathComponent(path)
-                records[path] = try FileReceipt(bytes: url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0, sha256: Self.digest(url))
-            }
         }
-        let receipt = try Receipt(catalog: Self.digest(Self.resource("assets", "json")), arch: Self.architecture, files: records)
+        let receipt = try Receipt(catalog: Self.digest(Self.resource("assets", "json")), arch: Self.architecture)
         try JSONEncoder().encode(receipt).write(to: root.appendingPathComponent("installed.json"), options: .atomic)
         try verifyInstallation()
         progress("Local assets installed and verified.")
@@ -140,9 +134,11 @@ struct Download: Decodable {
     let bytes: Int
     let sha256: String
     let path: String?
-    let files: [String: String]?
-    var paths: [String] { path.map { [$0] } ?? files.map { Array($0.values) } ?? [] }
+    let files: [String: InstalledFile]?
+    var installedFiles: [InstalledFile] {
+        path.map { [InstalledFile(path: $0, bytes: bytes, sha256: sha256)] } ?? files.map { Array($0.values) } ?? []
+    }
 }
 
-private struct FileReceipt: Codable { let bytes: Int; let sha256: String }
-private struct Receipt: Codable { let catalog: String; let arch: String; let files: [String: FileReceipt] }
+struct InstalledFile: Decodable { let path: String; let bytes: Int; let sha256: String }
+private struct Receipt: Codable { let catalog: String; let arch: String }
