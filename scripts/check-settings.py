@@ -12,10 +12,7 @@ assets = Path(os.environ["SHOWBACK_ASSETS"])
 desktop = str(assets / "bin/agent-desktop")
 settings = Path.home() / "Library/Application Support/Showback/settings.json"
 original = settings.read_bytes() if settings.exists() else None
-settings.parent.mkdir(parents=True, exist_ok=True)
-settings.write_text('{"voice":"removed-voice"}')
-process = subprocess.Popen([binary, "settings"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-scope = "showback-settings-check-" + str(process.pid)
+process = None
 
 def call(*args):
     result = subprocess.run([desktop, "--session", scope, *args], capture_output=True, text=True, timeout=15)
@@ -24,6 +21,10 @@ def call(*args):
     return value["data"]
 
 try:
+    settings.parent.mkdir(parents=True, exist_ok=True)
+    settings.write_text('{"voice":"removed-voice"}')
+    process = subprocess.Popen([binary, "settings"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    scope = "showback-settings-check-" + str(process.pid)
     deadline = time.monotonic() + 10
     window = None
     while time.monotonic() < deadline:
@@ -58,13 +59,15 @@ try:
     assert process.returncode == 0
     print("Native Settings recovered an invalid voice, persisted selection, and closed cleanly.")
 finally:
-    if process.poll() is None:
-        process.terminate()
-        try:
-            process.communicate(timeout=5)
-        except subprocess.TimeoutExpired:
-            process.kill(); process.communicate()
-    if original is None:
-        if settings.exists(): settings.unlink()
-    else:
-        settings.write_bytes(original)
+    try:
+        if process is not None and process.poll() is None:
+            process.terminate()
+            try:
+                process.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill(); process.communicate()
+    finally:
+        if original is None:
+            if settings.exists(): settings.unlink()
+        else:
+            settings.write_bytes(original)

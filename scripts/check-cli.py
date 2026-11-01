@@ -26,4 +26,7 @@ with tempfile.TemporaryDirectory(prefix="showback-cli-") as temporary:
         result = json.loads((output / "run.json").read_text())
         assert result["status"] == "failed" and not result["mediaReady"], result
         assert not (output / "demo.mp4").exists()
-print("CLI startup, validation, and failure checks passed.")
+if os.environ.get("SHOWBACK_ASSETS"):
+    print("CLI startup, validation, and failure checks passed.")
+else:
+    print("CLI startup and validation checks passed; failed-run checks skipped (SHOWBACK_ASSETS is unset).")

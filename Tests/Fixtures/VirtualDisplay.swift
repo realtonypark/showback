@@ -97,6 +97,7 @@ for _ in 0..<10 {
   FileHandle.standardError.write("placing display: \(error.rawValue), at \(CGDisplayBounds(id).origin)\n".data(using: .utf8)!)
 }
 
+guard CGDisplayBounds(id).origin == origin else { fail("Display placement failed: expected \(origin), got \(CGDisplayBounds(id).origin)") }
 let b = CGDisplayBounds(id)
 let pixels = CGDisplayCopyDisplayMode(id).map { "\($0.pixelWidth)x\($0.pixelHeight)" } ?? "?"
 print("{\"id\": \(id), \"x\": \(b.origin.x), \"y\": \(b.origin.y), \"width\": \(b.width), \"height\": \(b.height), \"pixels\": \"\(pixels)\"}")

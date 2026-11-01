@@ -16,6 +16,7 @@ binary = str(Path(sys.argv[1] if len(sys.argv) > 1 else '.build/debug/showback')
 desktop = str(Path(os.environ['SHOWBACK_ASSETS']) / 'bin/agent-desktop')
 events = Path(os.environ['SHOWBACK_FIXTURE_EVENTS'])
 root = Path(sys.argv[2] if len(sys.argv) > 2 else '.local/visual.showback').resolve()
+root.parent.mkdir(parents=True, exist_ok=True)
 script = root.with_suffix('.json')
 script.write_text(json.dumps({'version': 1, 'title': 'Moving window check', 'app': 'Showback Fixture', 'window': {'title': 'Showback Fixture'}, 'scenes': [
     {'say': "I'll move this window, then use its controls.", 'actions': [{'click': {'role': 'button', 'name': 'Move window'}}], 'expect': {'text': 'Window moved'}},

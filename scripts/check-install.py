@@ -54,6 +54,7 @@ with tempfile.TemporaryDirectory(prefix="showback-install-") as temporary:
         policy = '(version 1)(allow default)(deny network-outbound (remote ip "*:*"))'
         failed = install(["/usr/bin/sandbox-exec", "-p", policy, "/bin/bash"])
         assert failed.returncode != 0, "A corrupt asset plus blocked download unexpectedly succeeded"
+        assert "voice-javert" in failed.stdout + failed.stderr, ("Failure did not reach the intended voice download", failed.stdout, failed.stderr)
     finally:
         if cache.exists():
             cache.unlink()

@@ -8,15 +8,29 @@ func attribute(_ element: AXUIElement, _ key: String) -> CFTypeRef? {
     AXUIElementCopyAttributeValue(element, key as CFString, &value)
     return value
 }
-func clickStop(_ element: AXUIElement) -> Bool {
+func findStop(_ element: AXUIElement) -> AXUIElement? {
     if attribute(element, kAXRoleAttribute) as? String == kAXButtonRole,
        attribute(element, kAXTitleAttribute) as? String == "Stop" {
-        return AXUIElementPerformAction(element, kAXPressAction as CFString) == .success
+        return element
     }
-    return (attribute(element, kAXChildrenAttribute) as? [AXUIElement] ?? []).contains(where: clickStop)
+    for child in attribute(element, kAXChildrenAttribute) as? [AXUIElement] ?? [] {
+        if let found = findStop(child) { return found }
+    }
+    return nil
 }
-let windows = attribute(app, kAXWindowsAttribute) as? [AXUIElement] ?? []
-guard windows.contains(where: { attribute($0, kAXTitleAttribute) as? String == "Showback Demo" && clickStop($0) }) else {
-    fatalError("Showback Stop control was not accessible")
-}
-print("Stop pressed through Accessibility")
+let deadline = ProcessInfo.processInfo.systemUptime + 5
+repeat {
+    let windows = attribute(app, kAXWindowsAttribute) as? [AXUIElement] ?? []
+    for window in windows where attribute(window, kAXTitleAttribute) as? String == "Showback Demo" {
+        if let button = findStop(window) {
+            // Retry observation only; a press can be delivered even when AX reports an error.
+            guard AXUIElementPerformAction(button, kAXPressAction as CFString) == .success else {
+                fatalError("Showback Stop press failed; not retrying a possibly delivered action")
+            }
+            print("Stop pressed through Accessibility")
+            exit(0)
+        }
+    }
+    Thread.sleep(forTimeInterval: 0.05)
+} while ProcessInfo.processInfo.systemUptime < deadline
+fatalError("Showback Stop control was not accessible within 5 seconds")

@@ -14,6 +14,8 @@ assert os.environ.get("SHOWBACK_ASSETS"), "Set SHOWBACK_ASSETS to verified local
 
 with tempfile.TemporaryDirectory(prefix="showback-runs-") as temporary:
     root = Path(temporary)
+    stop_helper = root / "click-stop"
+    subprocess.run(["swiftc", "Tests/Fixtures/ClickStop.swift", "-o", str(stop_helper)], check=True, capture_output=True, timeout=30)
     def script(name, scenes):
         path = root / (name + ".json")
         path.write_text(json.dumps({"version": 1, "title": name, "app": "Showback Fixture", "window": {"title": "Showback Fixture"}, "scenes": scenes}))
@@ -90,7 +92,7 @@ with tempfile.TemporaryDirectory(prefix="showback-runs-") as temporary:
             time.sleep(0.05)
         else:
             raise AssertionError("Run never started")
-        clicked = subprocess.run(["swift", "Tests/Fixtures/ClickStop.swift", str(process.pid)], capture_output=True, text=True, timeout=15)
+        clicked = subprocess.run([str(stop_helper), str(process.pid)], capture_output=True, text=True, timeout=15)
         assert clicked.returncode == 0, (clicked.stdout, clicked.stderr)
         stdout, stderr = process.communicate(timeout=30)
         state = json.loads((stopped_bundle / "run.json").read_text())
