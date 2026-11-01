@@ -1,6 +1,6 @@
 import AppKit
 
-public struct PointerFrame {
+public struct PointerFrame: Equatable {
     let x: Double
     let y: Double
     let target: CGRect
@@ -75,6 +75,25 @@ public struct PointerTimeline: Codable, Sendable {
         context.scaleBy(x: 1, y: -1)
         draw(in: context, size: size, at: time)
         return context.makeImage()
+    }
+}
+
+final class PointerImageCache: @unchecked Sendable {
+    private let lock = NSLock()
+    private let timeline: PointerTimeline
+    private let size: CGSize
+    private var frame: PointerFrame?
+    private var bitmap: CGImage?
+
+    init(timeline: PointerTimeline, size: CGSize) { self.timeline = timeline; self.size = size }
+
+    func image(at time: Double) -> CGImage? {
+        lock.lock(); defer { lock.unlock() }
+        let current = timeline.frame(at: time, width: size.width, height: size.height)
+        if current == frame { return bitmap }
+        frame = current
+        bitmap = current == nil ? nil : timeline.image(size: size, at: time)
+        return bitmap
     }
 }
 

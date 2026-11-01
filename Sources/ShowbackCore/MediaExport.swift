@@ -34,10 +34,11 @@ public enum MediaExport {
             }
         }
         let size = try await sourceVideo.load(.naturalSize)
+        let pointerImages = PointerImageCache(timeline: pointer, size: size)
         let imageContext = CIContext(options: [.cacheIntermediates: false])
         let filters = try await AVVideoComposition.videoComposition(with: composition, applyingCIFiltersWithHandler: { request in
             let source = request.sourceImage
-            if let overlay = pointer.image(size: size, at: request.compositionTime.seconds) {
+            if let overlay = pointerImages.image(at: request.compositionTime.seconds) {
                 request.finish(with: CIImage(cgImage: overlay).composited(over: source).cropped(to: source.extent), context: imageContext)
             } else { request.finish(with: source, context: imageContext) }
         })

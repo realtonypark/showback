@@ -2,6 +2,18 @@ import XCTest
 @testable import ShowbackCore
 
 final class PresentationTests: XCTestCase {
+    func testPointerImageCacheReusesSettledFramesAndInvalidatesMovement() throws {
+        var timeline = PointerTimeline()
+        try timeline.point(at: 1, target: Box(x: 100, y: 100, width: 50, height: 30),
+                           viewport: Box(x: 0, y: 0, width: 800, height: 600))
+        let cache = PointerImageCache(timeline: timeline, size: CGSize(width: 800, height: 600))
+        XCTAssertNil(cache.image(at: 0))
+        let moving = try XCTUnwrap(cache.image(at: 1.1))
+        let settled = try XCTUnwrap(cache.image(at: 2))
+        XCTAssertFalse(moving === settled)
+        XCTAssertTrue(settled === cache.image(at: 3))
+    }
+
     func testReducedMotionPlacesPointerWithoutTravel() throws {
         var timeline = PointerTimeline()
         try timeline.point(at: 1, target: Box(x: 100, y: 100, width: 200, height: 40),
