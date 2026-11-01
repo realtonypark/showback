@@ -1,0 +1,48 @@
+Sources/ShowbackCore/Resources/THIRD-PARTY.md
+  s_d04a6a7c166416::t_b97e09204888e6 3-4
+.github/ISSUE_TEMPLATE/feature_request.yml
+  s_d04a6a7c166416::t_f89af10c7bcd63 1-17
+SECURITY.md
+  s_d04a6a7c166416::t_f89af10c7bcd63 1-9
+.github/ISSUE_TEMPLATE/bug_report.yml
+  s_d04a6a7c166416::t_f89af10c7bcd63 1-28
+examples/README.md
+  s_d04a6a7c166416::t_b97e09204888e6 1-68
+docs/getting-started.md
+  s_d04a6a7c166416::t_b97e09204888e6 1-65
+docs/releasing.md
+  s_d04a6a7c166416::t_b97e09204888e6 1-15
+scripts/check-install.py
+  s_d04a6a7c166416::t_b97e09204888e6 39
+scripts/install.sh
+  s_d04a6a7c166416::t_b97e09204888e6 55
+.github/ISSUE_TEMPLATE/config.yml
+  s_d04a6a7c166416::t_f89af10c7bcd63 1-5
+.github/workflows/ci.yml
+  s_d04a6a7c166416::t_f89af10c7bcd63 1-29
+CONTRIBUTING.md
+  s_d04a6a7c166416::t_f89af10c7bcd63 1-59
+README.md
+  s_d04a6a7c166416::t_d03a98a86b1741 9,11
+  s_d04a6a7c166416::t_f89af10c7bcd63 3-8,10,15,18-19,21-39,42,44,46,48,50,52,54-74,79,83,85,104,106,108,110,112,114,116-119,121,123
+LICENSE
+  s_d04a6a7c166416::t_f89af10c7bcd63 1-21
+.github/pull_request_template.md
+  s_d04a6a7c166416::t_f89af10c7bcd63 1-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e75bda8eb45c89c7ee5248aa81222c7574c9bcc5",
+  "prompts": {},
+  "sessions": {
+    "s_d04a6a7c166416": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19598-40dc-7f81-9484-3ecd9608fde4",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
