@@ -1,0 +1,41 @@
+Tests/Fixtures/DesktopFixture.swift
+  s_d04a6a7c166416::t_59ca5f14cced66 8-19,29-32,67-70
+scripts/check-visual.py
+  s_d04a6a7c166416::t_6faf0961246284 1-73
+Tests/Fixtures/SCRAWL-LICENSE
+  s_d04a6a7c166416::t_59ca5f14cced66 1-21
+scripts/build-fixtures.sh
+  s_d04a6a7c166416::t_30378d28af753f 1-22
+scripts/check-audio-sync.py
+  s_d04a6a7c166416::t_28791275912859 1-31
+docs/verification.md
+  s_d04a6a7c166416::t_58d5c7b7623703 13,16,26-32,35-37,40-62
+Tests/Fixtures/VirtualDisplay.swift
+  s_d04a6a7c166416::t_59ca5f14cced66 1-117
+Sources/ShowbackCore/Resources/THIRD-PARTY.md
+  s_d04a6a7c166416::t_639b5440a9c43d 11
+Tests/Fixtures/ClickStop.swift
+  s_d04a6a7c166416::t_30bdbb476a9be5 1-22
+docs/plans/2026-11-01-showback-implementation.md
+  s_d04a6a7c166416::t_d66fda447c83bc 35-36,38,45-47,54-57,64-66,75,77-78
+scripts/check-install.py
+  s_d04a6a7c166416::t_8a5fab4bf2d584 21-33
+scripts/check-runs.py
+  s_d04a6a7c166416::t_8132d7c269332a 68-91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c44cbb78c18f48f6b797d2fee70e1028773dbea9",
+  "prompts": {},
+  "sessions": {
+    "s_d04a6a7c166416": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19598-40dc-7f81-9484-3ecd9608fde4",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
