@@ -8,7 +8,8 @@ public struct CommandOutput {
 
 public enum Command {
     public static func run(_ executable: URL, _ arguments: [String], timeout: Double = 30,
-                           directory: URL? = nil, environment: [String: String]? = nil) async throws -> CommandOutput {
+                           directory: URL? = nil, environment: [String: String]? = nil,
+                           stdoutFile: URL? = nil) async throws -> CommandOutput {
         let state = CommandState()
         return try await withTaskCancellationHandler(operation: {
             try Task.checkCancellation()
@@ -18,7 +19,7 @@ public enum Command {
                     do {
                         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
                         defer { try? FileManager.default.removeItem(at: folder) }
-                        let outputURL = folder.appendingPathComponent("stdout")
+                        let outputURL = stdoutFile ?? folder.appendingPathComponent("stdout")
                         let errorURL = folder.appendingPathComponent("stderr")
                         try Data().write(to: outputURL)
                         try Data().write(to: errorURL)
@@ -29,7 +30,7 @@ public enum Command {
                         process.executableURL = executable
                         process.arguments = arguments
                         process.currentDirectoryURL = directory
-                        process.environment = environment
+                        process.environment = environment ?? ProcessInfo.processInfo.environment
                         process.standardOutput = output
                         process.standardError = errors
                         process.standardInput = FileHandle.nullDevice
@@ -45,7 +46,7 @@ public enum Command {
                             return String(decoding: try Data(contentsOf: url), as: UTF8.self)
                         }
                         continuation.resume(returning: try CommandOutput(status: process.terminationStatus,
-                                                                          stdout: read(outputURL), stderr: read(errorURL)))
+                                                                          stdout: stdoutFile == nil ? read(outputURL) : "", stderr: read(errorURL)))
                     } catch { continuation.resume(throwing: error) }
                 }
             }
