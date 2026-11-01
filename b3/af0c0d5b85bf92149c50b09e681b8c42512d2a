@@ -1,0 +1,19 @@
+Tests/ShowbackCoreTests/ScriptTests.swift
+  s_15cea8caa09e27::t_fbf68f37ec03d3 21,23-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b3af0c0d5b85bf92149c50b09e681b8c42512d2a",
+  "prompts": {},
+  "sessions": {
+    "s_15cea8caa09e27": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a19907-be7a-71b9-a072-185e829e0397",
+        "model": "auto-jev-routing"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
