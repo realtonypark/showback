@@ -70,6 +70,106 @@ final class DesktopTests: XCTestCase {
         XCTAssertEqual(result.id, "w-1")
         XCTAssertEqual(result.bounds.x, -100)
     }
+    func testSelectWaitsForSlowWindowThenSucceeds() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let count = root.appendingPathComponent("count")
+        let binary = root.appendingPathComponent("desktop")
+        let windows = String(decoding: try JSONSerialization.data(withJSONObject: ["ok": true, "data": [first]]), as: UTF8.self)
+        let script = """
+        #!/bin/sh
+        if [ "$1" = --session ]; then shift 2; fi
+        case "$1 $2" in
+          list-windows*)
+            n=0; [ -f '\(count.path)' ] && n=$(cat '\(count.path)'); n=$((n+1)); printf '%s' "$n" > '\(count.path)'
+            if [ "$n" -lt 2 ]; then printf '%s' '{"ok":true,"data":[]}'; else printf '%s' '\(windows)'; fi ;;
+          *) printf '%s' '{"ok":true,"data":{}}' ;;
+        esac
+        """
+        try script.write(to: binary, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binary.path)
+        let desktop = Desktop(binary: binary, app: "Example", title: "Account", sessionFile: root.appendingPathComponent("s.json"))
+        try await desktop.select(app: "Example", title: "Account")
+        XCTAssertEqual(desktop.window?.id, "w-1")
+    }
+    func testFocusRetriesTransientFocusLoss() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let count = root.appendingPathComponent("count")
+        let binary = root.appendingPathComponent("desktop")
+        let windows = String(decoding: try JSONSerialization.data(withJSONObject: ["ok": true, "data": [first]]), as: UTF8.self)
+        let script = """
+        #!/bin/sh
+        if [ "$1" = --session ]; then shift 2; fi
+        case "$1 $2" in
+          list-windows*) printf '%s' '\(windows)' ;;
+          focus-window*)
+            n=0; [ -f '\(count.path)' ] && n=$(cat '\(count.path)'); n=$((n+1)); printf '%s' "$n" > '\(count.path)'
+            if [ "$n" -lt 2 ]; then printf '%s' '{"ok":false,"error":{"message":"lost focus"}}'; else printf '%s' '{"ok":true,"data":{}}'; fi ;;
+          *) printf '%s' '{"ok":true,"data":{}}' ;;
+        esac
+        """
+        try script.write(to: binary, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binary.path)
+        let desktop = Desktop(binary: binary, app: "Example", title: "Account", sessionFile: root.appendingPathComponent("s.json"))
+        try await desktop.select(app: "Example", title: "Account")
+        try await desktop.focus()
+        XCTAssertEqual(try String(contentsOf: count, encoding: .utf8), "2")
+    }
+    func testAbsentRetriesTransientFindFailure() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let count = root.appendingPathComponent("count")
+        let binary = root.appendingPathComponent("desktop")
+        let windows = String(decoding: try JSONSerialization.data(withJSONObject: ["ok": true, "data": [first]]), as: UTF8.self)
+        let script = """
+        #!/bin/sh
+        if [ "$1" = --session ]; then shift 2; fi
+        case "$1 $2" in
+          list-windows*) printf '%s' '\(windows)' ;;
+          find*)
+            n=0; [ -f '\(count.path)' ] && n=$(cat '\(count.path)'); n=$((n+1)); printf '%s' "$n" > '\(count.path)'
+            if [ "$n" -lt 2 ]; then printf '%s' '{"ok":false,"error":{"message":"incomplete"}}'; else printf '%s' '{"ok":true,"data":{"matches":[]}}'; fi ;;
+          *) printf '%s' '{"ok":true,"data":{}}' ;;
+        esac
+        """
+        try script.write(to: binary, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binary.path)
+        let desktop = Desktop(binary: binary, app: "Example", title: "Account", sessionFile: root.appendingPathComponent("s.json"))
+        try await desktop.select(app: "Example", title: "Account")
+        let absent = Expected(target: Selector(role: nil, name: nil, text: "404", nativeID: nil), timeout: 3)
+        let result = try await desktop.waitForAbsent(absent) as? [String: Any]
+        XCTAssertEqual(result?["absent"] as? Bool, true)
+    }
+    func testFindRaisesTraversalTimeoutForDenseTrees() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let log = root.appendingPathComponent("calls")
+        let binary = root.appendingPathComponent("desktop")
+        let windows = String(decoding: try JSONSerialization.data(withJSONObject: ["ok": true, "data": [first]]), as: UTF8.self)
+        let script = """
+        #!/bin/sh
+        if [ "$1" = --session ]; then shift 2; fi
+        printf '%s\\n' "$*" >> '\(log.path)'
+        case "$1 $2" in
+          list-windows*) printf '%s' '\(windows)' ;;
+          find*) printf '%s' '{"ok":true,"data":{"matches":[]}}' ;;
+          *) printf '%s' '{"ok":true,"data":{}}' ;;
+        esac
+        """
+        try script.write(to: binary, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binary.path)
+        let desktop = Desktop(binary: binary, app: "Example", title: "Account", sessionFile: root.appendingPathComponent("s.json"))
+        try await desktop.select(app: "Example", title: "Account")
+        let absent = Expected(target: Selector(role: nil, name: nil, text: "404", nativeID: nil), timeout: 2)
+        let result = try await desktop.waitForAbsent(absent) as? [String: Any]
+        XCTAssertEqual(result?["absent"] as? Bool, true)
+        XCTAssertTrue(try String(contentsOf: log, encoding: .utf8).contains("--timeout-ms 20000"))
+    }
     func testTextPredicateDoesNotMatchWindowOnlyBecauseAChildMatches() {
         let matches: [[String: Any]] = [["role": "window", "name": "Example"], ["role": "statictext", "name": "Welcome", "value": "Welcome"]]
         let target = Selector(role: nil, name: nil, text: "Welcome", nativeID: nil)

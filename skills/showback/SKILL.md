@@ -47,7 +47,7 @@ Actions:
 - `{"scroll": {"target": SELECTOR, "direction": "down", "amount": 3}}` scrolls a target.
 - `{"wait": {"text": "Saved", "timeout": 10}}` waits for a UI condition. A scene-level `expect` has the same condition format.
 
-Use one action key per action. Selectors combine `role`, `name`, `text`, and `nativeID`. Conditions use those fields plus a timeout in seconds (default 15, maximum 300). Action targets must resolve uniquely; a condition passes when a direct match exists. Scripts have no shell commands, loops, guessed coordinate fallback, or autonomous recovery.
+Use one action key per action. Selectors combine `role`, `name`, `text`, and `nativeID`. Conditions use those fields plus a timeout in seconds (default 15, maximum 300). Action targets must resolve uniquely; `expect` passes when a direct match exists, `absent` passes when no direct match exists. To prove a fix, check both: `expect` the intended state and set `absent` to the old error, for example `"absent": {"text": "404"}`. Window selection waits up to 15 seconds for a single window to appear; ambiguous windows still stop the run. Scripts have no shell commands, loops, guessed coordinate fallback, or autonomous recovery.
 
 Window capture is the default. For a demo that deliberately spans windows or apps, obtain the display ID from `showback desktop list-displays` and add `"capture": {"display": 4}` using the actual chosen ID. Display capture includes everything on that display. Do not broaden capture silently. A scene may then override `app` and `window` to select another app/window on that display. Each scene defaults to the root app/window; repeat overrides for a follow-up outcome scene in the other app. Scene switching is rejected in window capture mode.
 

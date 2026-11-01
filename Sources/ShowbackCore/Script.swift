@@ -32,7 +32,7 @@ public struct DemoScript {
         let values = try root.array("scenes")
         guard !values.isEmpty, values.count <= 100 else { throw Failure("Use 1 to 100 scenes.") }
         let scenes = try values.enumerated().map { index, value -> Scene in
-            let fields = try Fields(value, keys: ["say", "actions", "expect", "app", "window"])
+            let fields = try Fields(value, keys: ["say", "actions", "expect", "absent", "app", "window"])
             let sceneApp = try fields.optionalString("app")
             let sceneWindow = try fields.optionalObject("window", keys: ["title"])?.string("title")
             guard displayID != nil || (sceneApp == nil && sceneWindow == nil) else {
@@ -42,8 +42,9 @@ public struct DemoScript {
             let actions = try fields.array("actions", default: []).map(Action.parse)
             guard actions.count <= 100 else { throw Failure("Scene \(index + 1) exceeds 100 actions.") }
             let expect = try fields.values["expect"].map(Expected.parse)
-            guard say != nil || !actions.isEmpty || expect != nil else { throw Failure("Scene \(index + 1) is empty.") }
-            return Scene(say: say, actions: actions, expect: expect, app: sceneApp, windowTitle: sceneWindow)
+            let absent = try fields.values["absent"].map(Expected.parse)
+            guard say != nil || !actions.isEmpty || expect != nil || absent != nil else { throw Failure("Scene \(index + 1) is empty.") }
+            return Scene(say: say, actions: actions, expect: expect, absent: absent, app: sceneApp, windowTitle: sceneWindow)
         }
         return DemoScript(title: title, app: app, windowTitle: window, displayID: displayID, scenes: scenes)
     }
@@ -53,10 +54,11 @@ public struct Scene {
     public let say: String?
     public let actions: [Action]
     public let expect: Expected?
+    public let absent: Expected?
     public let app: String?
     public let windowTitle: String?
-    init(say: String?, actions: [Action], expect: Expected?, app: String? = nil, windowTitle: String? = nil) {
-        self.say = say; self.actions = actions; self.expect = expect; self.app = app; self.windowTitle = windowTitle
+    init(say: String?, actions: [Action], expect: Expected?, absent: Expected? = nil, app: String? = nil, windowTitle: String? = nil) {
+        self.say = say; self.actions = actions; self.expect = expect; self.absent = absent; self.app = app; self.windowTitle = windowTitle
     }
 }
 
