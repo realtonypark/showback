@@ -1,0 +1,25 @@
+Sources/ShowbackCore/Process.swift
+  s_d04a6a7c166416::t_218fc4e25d6c12 33
+  s_d04a6a7c166416::t_bd465ddba74c1d 11-12
+  s_d04a6a7c166416::t_38836a72c722e4 22,49
+Tests/ShowbackCoreTests/ProcessTests.swift
+  s_d04a6a7c166416::t_be270caebd6cb9 5-10
+  s_d04a6a7c166416::t_bd465ddba74c1d 11-12,18-19
+  s_d04a6a7c166416::t_1387eb7bce6040 13-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a48566df74da31788633bcf0c5f16a8a053828c8",
+  "prompts": {},
+  "sessions": {
+    "s_d04a6a7c166416": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19598-40dc-7f81-9484-3ecd9608fde4",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
