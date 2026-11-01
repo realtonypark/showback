@@ -1,0 +1,33 @@
+Sources/ShowbackCore/RunBundle.swift
+  s_d04a6a7c166416::t_c59661a25cbe2a 21-31
+Sources/ShowbackCore/Speech.swift
+  s_d04a6a7c166416::t_c59661a25cbe2a 44,48
+Sources/ShowbackCore/RunLock.swift
+  s_d04a6a7c166416::t_c59661a25cbe2a 7
+Tests/ShowbackCoreTests/SpeechTests.swift
+  s_d04a6a7c166416::t_bedaadb10bd388 6-21
+Tests/ShowbackCoreTests/SettingsStoreTests.swift
+  s_d04a6a7c166416::t_bedaadb10bd388 1-19
+Sources/ShowbackCore/SettingsStore.swift
+  s_d04a6a7c166416::t_c59661a25cbe2a 9-16
+Tests/ShowbackCoreTests/RunBundleTests.swift
+  s_d04a6a7c166416::t_d6a1032613c987 16,21-27
+Tests/ShowbackCoreTests/RunLockTests.swift
+  s_d04a6a7c166416::t_cf326a3bb3d674 5-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ae947d7427611f680f2b113dbf7ffb94e2880a48",
+  "prompts": {},
+  "sessions": {
+    "s_d04a6a7c166416": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19598-40dc-7f81-9484-3ecd9608fde4",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
