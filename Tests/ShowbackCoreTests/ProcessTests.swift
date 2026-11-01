@@ -18,14 +18,32 @@ final class ProcessTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: file), Data([0, 255, 10]))
     }
     func testArgumentsArePassedLiterally() async throws {
-        let result = try await Command.run(URL(fileURLWithPath: "/usr/bin/printf"), ["%s", "$(touch /tmp/showback-must-not-exist); hello"])
-        XCTAssertEqual(result.stdout, "$(touch /tmp/showback-must-not-exist); hello")
+        let marker = FileManager.default.temporaryDirectory.appendingPathComponent("showback-literal-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: marker) }
+        let text = "$(touch " + marker.path + "); hello"
+        let result = try await Command.run(URL(fileURLWithPath: "/usr/bin/printf"), ["%s", text])
+        XCTAssertEqual(result.stdout, text)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: marker.path))
     }
     func testReportsExitStatusAndStderrWithoutLosingOutput() async throws {
         let result = try await Command.run(URL(fileURLWithPath: "/bin/sh"), ["-c", "printf output; printf failure >&2; exit 7"])
         XCTAssertEqual(result.status, 7)
         XCTAssertEqual(result.stdout, "output")
         XCTAssertEqual(result.stderr, "failure")
+    }
+    func testLimitsOutputBeforeTimeoutIncludingBinaryFiles() async throws {
+        for mode in ["stdout", "stderr", "file"] {
+            let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: file) }
+            let redirect = mode == "stderr" ? " >&2" : ""
+            do {
+                _ = try await Command.run(URL(fileURLWithPath: "/bin/sh"),
+                    ["-c", "head -c 17825792 /dev/zero" + redirect + "; sleep 5"], timeout: 2,
+                    stdoutFile: mode == "file" ? file : nil)
+                XCTFail("Oversized output succeeded")
+            } catch { XCTAssertTrue(error.localizedDescription.contains("output exceeds"), error.localizedDescription) }
+            if mode == "file" { XCTAssertLessThanOrEqual(try file.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0, 16_777_216) }
+        }
     }
     func testTerminatesTimedOutCommand() async {
         do {

@@ -9,7 +9,8 @@ public struct CommandOutput {
 public enum Command {
     public static func run(_ executable: URL, _ arguments: [String], timeout: Double = 30,
                            directory: URL? = nil, environment: [String: String]? = nil,
-                           stdoutFile: URL? = nil) async throws -> CommandOutput {
+                           stdoutFile: URL? = nil, outputLimit: Int = 16_777_216) async throws -> CommandOutput {
+        guard outputLimit > 0 else { throw Failure("Command output limit must be positive.") }
         let state = CommandState()
         return try await withTaskCancellationHandler(operation: {
             try Task.checkCancellation()
@@ -31,18 +32,30 @@ public enum Command {
                         process.arguments = arguments
                         process.currentDirectoryURL = directory
                         process.environment = environment ?? ProcessInfo.processInfo.environment
-                        process.standardOutput = output
-                        process.standardError = errors
+                        let stdout = Pipe(), stderr = Pipe()
+                        process.standardOutput = stdout
+                        process.standardError = stderr
                         process.standardInput = FileHandle.nullDevice
                         try state.start(process)
+                        try? stdout.fileHandleForWriting.close()
+                        try? stderr.fileHandleForWriting.close()
+                        let readers = DispatchGroup()
+                        for (pipe, file) in [(stdout, output), (stderr, errors)] {
+                            readers.enter()
+                            DispatchQueue.global(qos: .userInitiated).async {
+                                defer { readers.leave() }
+                                Self.drain(pipe, into: file, process: process, state: state, limit: outputLimit)
+                            }
+                        }
                         let deadline = DispatchWorkItem { state.stop("Command timed out after \(timeout) seconds.") }
                         DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: deadline)
                         defer { deadline.cancel() }
                         process.waitUntilExit()
+                        readers.wait()
                         if let reason = state.reason { throw Failure(reason) }
                         func read(_ url: URL) throws -> String {
                             let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-                            guard size <= 16_777_216 else { throw Failure("Command output exceeds 16 MiB.") }
+                            guard size <= outputLimit else { throw Failure("Command output exceeds \(outputLimit) bytes.") }
                             return String(decoding: try Data(contentsOf: url), as: UTF8.self)
                         }
                         continuation.resume(returning: try CommandOutput(status: process.terminationStatus,
@@ -52,6 +65,33 @@ public enum Command {
             }
         }, onCancel: { state.stop("Command cancelled.") })
     }
+
+    private static func drain(_ pipe: Pipe, into file: FileHandle, process: Process, state: CommandState, limit: Int) {
+        let input = pipe.fileHandleForReading
+        defer { try? input.close() }
+        let descriptor = input.fileDescriptor
+        guard fcntl(descriptor, F_SETFL, fcntl(descriptor, F_GETFL) | O_NONBLOCK) == 0 else {
+            state.stop("Cannot read command output."); return
+        }
+        var buffer = [UInt8](repeating: 0, count: 65_536)
+        var total = 0
+        while true {
+            let count = read(descriptor, &buffer, buffer.count)
+            if count > 0 {
+                guard count <= limit - total else { state.stop("Command output exceeds \(limit) bytes."); return }
+                do { try file.write(contentsOf: Data(buffer.prefix(count))) }
+                catch { state.stop("Cannot save command output: \(error.localizedDescription)"); return }
+                total += count
+            } else if count == 0 { return }
+            else if errno == EINTR { continue }
+            else if errno == EAGAIN {
+                // A descendant can retain the pipe after the direct child exits.
+                guard process.isRunning else { return }
+                usleep(10_000)
+            } else { state.stop("Cannot read command output."); return }
+        }
+    }
+
 }
 
 private final class CommandState: @unchecked Sendable {
