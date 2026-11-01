@@ -1,0 +1,32 @@
+Tests/ShowbackCoreTests/DesktopTests.swift
+  s_d04a6a7c166416::t_6e07236e1c61fe 5-56
+Sources/ShowbackCore/Desktop.swift
+  s_d04a6a7c166416::t_72611304a49e78 82-84
+  s_d04a6a7c166416::t_c236eda0801322 32-33,35-36,40-46,67-81,85-96
+Sources/ShowbackCore/Runner.swift
+  s_d04a6a7c166416::t_c5d71f5ac7bd80 13-14
+docs/desktop.md
+  s_d04a6a7c166416::t_8fb2448b8453a6 11
+docs/runs.md
+  s_d04a6a7c166416::t_2c2ca67a3b3628 10
+docs/verification.md
+  s_d04a6a7c166416::t_35152fcf07221d 25,118-124
+scripts/check-signals.py
+  s_d04a6a7c166416::t_a3aa35a122b719 14-18,47-60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0a64b0a820f55ac9ace25ce21e2a9a526da5009b",
+  "prompts": {},
+  "sessions": {
+    "s_d04a6a7c166416": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19598-40dc-7f81-9484-3ecd9608fde4",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
