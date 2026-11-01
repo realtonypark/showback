@@ -89,7 +89,7 @@ public struct PointerTimeline: Codable, Sendable {
     private let panel: NSPanel
     private let view: PointerView
     private var timer: Timer?
-    private let epoch: Double
+    private var epoch: Double
     var timeline: PointerTimeline { view.timeline }
 
     init(viewport: Box, epoch: Double) {
@@ -113,6 +113,7 @@ public struct PointerTimeline: Codable, Sendable {
         try view.timeline.point(at: ProcessInfo.processInfo.systemUptime - epoch, target: target, viewport: viewport, kind: kind)
         if kind != "click" { try await Task.sleep(nanoseconds: 320_000_000) }
     }
+    func begin(at epoch: Double) { self.epoch = epoch }
     func close() { timer?.invalidate(); timer = nil; panel.close() }
 
     static func appKitFrame(_ box: Box) -> CGRect {

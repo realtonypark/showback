@@ -30,10 +30,11 @@ import CoreImage
         }
         let viewport = Box(x: rect.minX, y: rect.minY, width: rect.width, height: rect.height)
         let config = SCStreamConfiguration()
-        let scale = min(2, 1920 / max(rect.width, rect.height))
-        config.width = max(2, Int(rect.width * scale / 2) * 2)
-        config.height = max(2, Int(rect.height * scale / 2) * 2)
+        let size = try captureDimensions(viewport: viewport, pixelScale: Double(filter.pointPixelScale))
+        config.width = Int(size.width)
+        config.height = Int(size.height)
         config.minimumFrameInterval = CMTime(value: 1, timescale: 30)
+        config.scalesToFit = true
         config.showsCursor = false
         config.ignoreShadowsSingleWindow = true
         config.capturesAudio = false
@@ -118,6 +119,13 @@ import CoreImage
     nonisolated func recordingOutputDidStartRecording(_ recordingOutput: SCRecordingOutput) { state.started() }
     nonisolated func recordingOutput(_ recordingOutput: SCRecordingOutput, didFailWithError error: Error) { state.fail(error.localizedDescription) }
     nonisolated func recordingOutputDidFinishRecording(_ recordingOutput: SCRecordingOutput) { state.finish() }
+}
+
+func captureDimensions(viewport: Box, pixelScale: Double) throws -> CGSize {
+    guard viewport.width > 0, viewport.height > 0, viewport.width.isFinite, viewport.height.isFinite,
+          pixelScale > 0, pixelScale.isFinite else { throw Failure("Invalid capture dimensions.") }
+    let scale = min(pixelScale, 1920 / max(viewport.width, viewport.height))
+    return CGSize(width: max(2, Int(viewport.width * scale / 2) * 2), height: max(2, Int(viewport.height * scale / 2) * 2))
 }
 
 private final class RecordingState: @unchecked Sendable {

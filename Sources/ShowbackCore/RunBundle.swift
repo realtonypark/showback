@@ -66,7 +66,8 @@ public final class RunBundle {
         if mediaReady { summary += "\nVideo: \(video.path)\n" }
         summary += "\nRun details: \(root.appendingPathComponent("run.json").path)\n"
         for event in events where event["kind"] as? String == "checked" {
-            summary += "\n- Scene \(event["scene"] ?? "?"): expected state observed at \(event["time"] ?? 0) seconds."
+            let time = String(format: "%.2f", event["time"] as? Double ?? 0)
+            summary += "\n- Scene \(event["scene"] ?? "?"): expected state observed at \(time)s."
         }
         try (summary + "\n").write(to: root.appendingPathComponent("summary.md"), atomically: true, encoding: .utf8)
         if mediaReady || !recording {

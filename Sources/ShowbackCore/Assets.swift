@@ -13,14 +13,16 @@ public struct Assets {
         #endif
     }
 
-    static var resourceBundle: Bundle {
-        if let base = Bundle.main.resourceURL,
-           let bundle = Bundle(url: base.appendingPathComponent("Showback_ShowbackCore.bundle")) { return bundle }
-        return Bundle.module
-    }
-
     static func resource(_ name: String, _ ext: String) throws -> URL {
-        guard let url = resourceBundle.url(forResource: name, withExtension: ext) else { throw Failure("Missing bundled resource: \(name).\(ext)") }
+        let bundle: Bundle
+        if Bundle.main.bundleURL.pathExtension == "app" {
+            guard let base = Bundle.main.resourceURL,
+                  let installed = Bundle(url: base.appendingPathComponent("Showback_ShowbackCore.bundle")) else {
+                throw Failure("Installed Showback resources are missing. Reinstall Showback.")
+            }
+            bundle = installed
+        } else { bundle = Bundle.module }
+        guard let url = bundle.url(forResource: name, withExtension: ext) else { throw Failure("Missing bundled resource: \(name).\(ext)") }
         return url
     }
 

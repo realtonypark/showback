@@ -2,6 +2,11 @@ import XCTest
 @testable import ShowbackCore
 
 final class PresentationTests: XCTestCase {
+    func testCaptureUsesActualPixelScaleWithoutEmptyCanvas() throws {
+        let box = Box(x: -1200, y: 100, width: 760, height: 540)
+        XCTAssertEqual(try captureDimensions(viewport: box, pixelScale: 1), CGSize(width: 760, height: 540))
+        XCTAssertEqual(try captureDimensions(viewport: box, pixelScale: 2), CGSize(width: 1520, height: 1080))
+    }
     func testNegativeDisplayOriginAndRetinaScaleUseSameTarget() throws {
         let viewport = Box(x: -1200, y: 100, width: 800, height: 600)
         let target = Box(x: -1100, y: 200, width: 200, height: 40)

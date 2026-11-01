@@ -4,8 +4,10 @@ final class FixtureController: NSObject {
     let status = NSTextField(labelWithString: "Signed out")
     let count = NSTextField(labelWithString: "Count: 0")
     var value = 0
+    let field = NSTextField(string: "")
     @objc func signIn() { status.stringValue = "Welcome, demo user" }
     @objc func increment() { value += 1; count.stringValue = "Count: \(value)" }
+    @objc func reset() { status.stringValue = "Signed out"; value = 0; count.stringValue = "Count: 0"; field.stringValue = "" }
 }
 
 let app = NSApplication.shared
@@ -33,7 +35,7 @@ button.bezelStyle = .rounded
 button.frame = NSRect(x: 48, y: 292, width: 140, height: 40)
 button.setAccessibilityIdentifier("sign-in")
 content.addSubview(button)
-let field = NSTextField(string: "")
+let field = controller.field
 field.placeholderString = "Demo note"
 field.setAccessibilityLabel("Demo note")
 field.frame = NSRect(x: 48, y: 212, width: 400, height: 35)
@@ -44,6 +46,10 @@ let increment = NSButton(title: "Increment", target: controller, action: #select
 increment.bezelStyle = .rounded
 increment.frame = NSRect(x: 48, y: 72, width: 140, height: 40)
 content.addSubview(increment)
+let reset = NSButton(title: "Reset", target: controller, action: #selector(FixtureController.reset))
+reset.bezelStyle = .rounded
+reset.frame = NSRect(x: 600, y: 72, width: 100, height: 40)
+content.addSubview(reset)
 window.makeKeyAndOrderFront(nil)
 window.setFrame(frame, display: true)
 app.activate(ignoringOtherApps: true)

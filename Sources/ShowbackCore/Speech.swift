@@ -15,8 +15,8 @@ public struct Speech {
         guard try assets.catalog.voices.contains(where: { $0.id == voice }) else { throw Failure("Unknown voice: \(voice).") }
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let config = try String(contentsOf: Assets.resource("speech", "yaml"), encoding: .utf8)
-            .replacingOccurrences(of: "__MODEL_FILE__", with: assets.url(for: "model").path)
-            .replacingOccurrences(of: "__TOKENIZER_FILE__", with: assets.url(for: "tokenizer").path)
+            .replacingOccurrences(of: "__MODEL_FILE__", with: String(decoding: JSONEncoder().encode(assets.url(for: "model").path), as: UTF8.self))
+            .replacingOccurrences(of: "__TOKENIZER_FILE__", with: String(decoding: JSONEncoder().encode(assets.url(for: "tokenizer").path), as: UTF8.self))
         let configURL = folder.appendingPathComponent("config.yaml")
         try config.write(to: configURL, atomically: true, encoding: .utf8)
         var environment = ProcessInfo.processInfo.environment

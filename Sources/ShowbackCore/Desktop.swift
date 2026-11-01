@@ -25,8 +25,8 @@ public struct DesktopWindow {
 
 public final class Desktop {
     let binary: URL
-    let app: String
-    let title: String?
+    private(set) var app: String
+    private(set) var title: String?
     public private(set) var session: String?
     public private(set) var window: DesktopWindow?
 
@@ -46,8 +46,13 @@ public final class Desktop {
         if recording, (permissions["screen_recording"] as? [String: Any])?["state"] as? String != "granted" {
             throw Failure("Screen Recording permission is required. Run agent-desktop permissions --guide.")
         }
+        try await select(app: app, title: title)
+    }
+
+    func select(app: String, title: String?) async throws {
         let windows = try await call(["list-windows", "--app", app]) as? [[String: Any]] ?? []
-        window = try Self.selectWindow(windows, app: app, title: title)
+        let selected = try Self.selectWindow(windows, app: app, title: title)
+        self.app = app; self.title = title; self.window = selected
     }
 
     public func end() async throws {
@@ -104,10 +109,6 @@ public final class Desktop {
             try await Task.sleep(nanoseconds: 150_000_000)
         } while ProcessInfo.processInfo.systemUptime < deadline
         throw Failure("Expected UI state did not appear within \(expected.timeout) seconds.")
-    }
-
-    public func screenshot(_ url: URL) async throws {
-        _ = try await call(["screenshot", url.path, "--app", app, "--window-id", selected().id])
     }
 
     private func find(_ target: Selector) async throws -> [[String: Any]] {
