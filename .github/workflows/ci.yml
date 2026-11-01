@@ -1,0 +1,29 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Toolchain
+        run: swift --version
+      - name: Swift tests
+        run: swift test -j 3
+      - name: Release build
+        run: swift build -c release -j 3 -Xswiftc -warnings-as-errors
+      - name: CLI smoke check without model assets
+        run: env -u SHOWBACK_ASSETS python3 scripts/check-cli.py .build/release/showback
+      - name: Signal verification assertions
+        run: python3 scripts/check-signal-assertions.py

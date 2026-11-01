@@ -36,6 +36,7 @@ with tempfile.TemporaryDirectory(prefix="showback-install-") as temporary:
     entry = prefix / ".local/bin/showback"
     skill = prefix / ".agents/skills/showback/SKILL.md"
     assert binary.exists() and skill.exists()
+    assert (app / "Contents/Resources/LICENSE").read_bytes() == (repo / "LICENSE").read_bytes()
     assert (app / "Contents/Resources/Assets/installed.json").exists()
     doctor = subprocess.run([str(entry), "doctor"], capture_output=True, text=True, timeout=15)
     assert doctor.returncode == 0 and "Pocket TTS" in doctor.stdout, doctor

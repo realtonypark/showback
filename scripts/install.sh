@@ -52,6 +52,7 @@ staged_app="$stage/Showback.app"
 mkdir -p "$staged_app/Contents/MacOS" "$staged_app/Contents/Resources"
 cp "$release_dir/showback" "$staged_app/Contents/MacOS/showback"
 cp -R "$release_dir/Showback_ShowbackCore.bundle" "$staged_app/Contents/Resources/"
+cp "$repo/LICENSE" "$staged_app/Contents/Resources/LICENSE"
 cat > "$staged_app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

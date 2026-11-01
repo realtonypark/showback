@@ -1,5 +1,7 @@
 # Third-party notices
 
+Showback's own code is MIT licensed in the repository-root `LICENSE`. The assets below retain their separate licenses; the project license does not relicense them.
+
 Showback downloads the following pinned assets during installation. It performs synthesis locally and does not offer voice cloning.
 
 - **Pocket TTS Rust runtime and model configuration:** Kyutai, MIT license. Runtime release v4.0.1 (asset version 3.3.0). https://github.com/kyutai-labs/pocket-tts . The runtime's license is installed at `Assets/notices/pocket-runtime.txt`. The bundled English 18M configuration replaces remote asset references with local paths; its architecture settings are unchanged.

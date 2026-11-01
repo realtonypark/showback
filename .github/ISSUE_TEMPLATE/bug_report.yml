@@ -1,0 +1,28 @@
+name: Bug report
+description: Report a reproducible Showback problem.
+body:
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Showback version or commit, macOS version, architecture, and launching app.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Steps and a minimal script using safe test data.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual result
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Relevant errors or redacted run facts. Review recordings and logs for private data before sharing.

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a vulnerability privately
+    url: https://github.com/realtonypark/showback/security/advisories/new
+    about: Keep sensitive details out of public issues.
