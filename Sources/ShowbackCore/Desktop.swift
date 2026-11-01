@@ -1,10 +1,13 @@
 import Foundation
 
-public struct Box: Codable, Equatable {
+public struct Box: Codable, Equatable, Sendable {
     public let x: Double
     public let y: Double
     public let width: Double
     public let height: Double
+    public init(x: Double, y: Double, width: Double, height: Double) {
+        self.x = x; self.y = y; self.width = width; self.height = height
+    }
     init(_ value: Any?) throws {
         guard let fields = value as? [String: Any], let x = fields["x"] as? Double, let y = fields["y"] as? Double,
               let width = fields["width"] as? Double, let height = fields["height"] as? Double,
