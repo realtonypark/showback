@@ -1,0 +1,35 @@
+Tests/ShowbackCoreTests/PresentationTests.swift
+  s_d04a6a7c166416::t_8ed17c45b78224 10-12
+  s_d04a6a7c166416::t_4dc96e2631edd9 1-9,13-20
+Sources/ShowbackCore/Desktop.swift
+  s_d04a6a7c166416::t_4dc96e2631edd9 8-10
+  s_d04a6a7c166416::t_218fc4e25d6c12 3
+Sources/ShowbackCore/MediaExport.swift
+  s_d04a6a7c166416::t_8507a0eba828e1 1-37,39-58
+  s_d04a6a7c166416::t_218fc4e25d6c12 38
+Sources/ShowbackCore/Presentation.swift
+  s_d04a6a7c166416::t_218fc4e25d6c12 11,20
+  s_d04a6a7c166416::t_4dc96e2631edd9 1-2,132
+  s_d04a6a7c166416::t_1387eb7bce6040 3-10,12-19,21-131
+Sources/ShowbackCore/Recording.swift
+  s_d04a6a7c166416::t_e5a7c1513cf7b6 1-140
+Tests/ShowbackCoreTests/MediaTests.swift
+  s_d04a6a7c166416::t_1ca7be1f46df9c 1-42,44-50
+  s_d04a6a7c166416::t_218fc4e25d6c12 43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "23dbae404052b0ee9f4598d5de3aed7a9e0ce21c",
+  "prompts": {},
+  "sessions": {
+    "s_d04a6a7c166416": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19598-40dc-7f81-9484-3ecd9608fde4",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
