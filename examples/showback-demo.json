@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "title": "Showback demonstrates its own Settings",
+  "app": "Showback",
+  "window": {
+    "title": "Showback Settings"
+  },
+  "scenes": [
+    {
+      "say": "This is Showback. The English speech model is installed locally, alongside the command-line tool and agent skill.",
+      "actions": [
+        {
+          "point": {
+            "role": "statictext",
+            "text": "Pocket TTS English 18M"
+          }
+        }
+      ],
+      "expect": {
+        "role": "statictext",
+        "text": "Pocket TTS English 18M"
+      }
+    },
+    {
+      "say": "This picker controls the voice used for future demonstrations. I can inspect it without changing your saved choice.",
+      "actions": [
+        {
+          "point": {
+            "role": "combobox",
+            "name": "Voice"
+          }
+        }
+      ],
+      "expect": {
+        "role": "combobox",
+        "name": "Voice"
+      }
+    },
+    {
+      "say": "The voice picker is available. This walkthrough is being saved as an MP4 with narration, screenshots, and the checks that passed."
+    }
+  ]
+}

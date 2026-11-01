@@ -17,14 +17,8 @@ One execution of a demo script against actual software.
 **Recording bundle**:
 The video, audio, screenshots, and accompanying information saved from a demo run.
 
-**Showback Cloud**:
-Showback-provided speech synthesis that the user can access without supplying a provider key.
-
-**OpenRouter BYOK**:
-Speech synthesis accessed through the user's own OpenRouter API key.
-
 **Local speech model**:
-A speech-synthesis model downloaded with the user's consent and run on their computer.
+A speech-synthesis model included in Showback installation and run on the user's computer.
 
 **Voice**:
 The speaking identity selected for narration within a speech model or service.

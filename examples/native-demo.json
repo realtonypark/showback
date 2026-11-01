@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "title": "A checked sign-in walkthrough",
+  "app": "Showback Fixture",
+  "window": { "title": "Showback Fixture" },
+  "scenes": [
+    {
+      "say": "Let's start with a signed-out account.",
+      "actions": [{ "click": { "role": "button", "name": "Reset" } }],
+      "expect": { "role": "statictext", "text": "Signed out" }
+    },
+    {
+      "say": "I'll open the account page using the sign-in button.",
+      "actions": [
+        { "point": { "role": "button", "name": "Sign in" } },
+        { "click": { "role": "button", "name": "Sign in" } }
+      ],
+      "expect": { "role": "statictext", "text": "Welcome, demo user" }
+    },
+    { "say": "The welcome message appeared. That confirms the sign-in action reached its expected state." },
+    {
+      "say": "I'll add a note to the account.",
+      "actions": [{ "type": { "target": { "role": "textfield", "name": "Demo note" }, "text": "Checked by Showback" } }],
+      "expect": { "role": "textfield", "text": "Checked by Showback" }
+    },
+    { "say": "The note is visible. The recording includes the actions and the checks that passed." }
+  ]
+}
