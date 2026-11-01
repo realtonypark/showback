@@ -5,7 +5,18 @@ final class FixtureController: NSObject {
     let count = NSTextField(labelWithString: "Count: 0")
     var value = 0
     let field = NSTextField(string: "")
-    @objc func signIn() { status.stringValue = "Welcome, demo user" }
+    @objc func signIn() {
+        status.stringValue = "Welcome, demo user"
+        if let i = CommandLine.arguments.firstIndex(of: "--events"), i + 1 < CommandLine.arguments.count {
+            let value = "\(ProcessInfo.processInfo.systemUptime)\n"
+            try! value.write(toFile: CommandLine.arguments[i + 1], atomically: true, encoding: .utf8)
+        }
+    }
+    @objc func moveWindow() {
+        guard let window = status.window, let screen = window.screen else { return }
+        window.setFrameOrigin(NSPoint(x: screen.frame.minX + 360, y: screen.frame.minY + 180))
+        status.stringValue = "Window moved"
+    }
     @objc func increment() { value += 1; count.stringValue = "Count: \(value)" }
     @objc func reset() { status.stringValue = "Signed out"; value = 0; count.stringValue = "Count: 0"; field.stringValue = "" }
 }
@@ -15,7 +26,10 @@ app.setActivationPolicy(.regular)
 let controller = FixtureController()
 let args = CommandLine.arguments
 let wanted = args.firstIndex(of: "--display").flatMap { i in i + 1 < args.count ? UInt32(args[i + 1]) : nil }
-let screen = NSScreen.screens.first { ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value == wanted } ?? NSScreen.main!
+guard let wanted, wanted != CGMainDisplayID(),
+      let screen = NSScreen.screens.first(where: { ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value == wanted }) else {
+    fatalError("Supply --display VIRTUAL_DISPLAY_ID")
+}
 let frame = NSRect(x: screen.frame.minX + 100, y: screen.frame.minY + 100, width: 760, height: 540)
 let window = NSWindow(contentRect: frame,
                       styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false, screen: screen)
@@ -50,6 +64,10 @@ let reset = NSButton(title: "Reset", target: controller, action: #selector(Fixtu
 reset.bezelStyle = .rounded
 reset.frame = NSRect(x: 600, y: 72, width: 100, height: 40)
 content.addSubview(reset)
+let move = NSButton(title: "Move window", target: controller, action: #selector(FixtureController.moveWindow))
+move.bezelStyle = .rounded
+move.frame = NSRect(x: 450, y: 72, width: 140, height: 40)
+content.addSubview(move)
 window.makeKeyAndOrderFront(nil)
 window.setFrame(frame, display: true)
 app.activate(ignoringOtherApps: true)

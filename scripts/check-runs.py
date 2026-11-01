@@ -65,6 +65,30 @@ with tempfile.TemporaryDirectory(prefix="showback-runs-") as temporary:
         if process.poll() is None:
             process.kill(); process.wait()
 
+    stopped_bundle = root / "stop-control.showback"
+    process = subprocess.Popen([binary, "run", str(long_script), "--mute", "--out", str(stopped_bundle)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    try:
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline:
+            assert process.poll() is None, process.communicate()
+            try:
+                state = json.loads((stopped_bundle / "run.json").read_text())
+                if any(event["kind"] == "scene" for event in state.get("events", [])): break
+            except FileNotFoundError:
+                pass
+            time.sleep(0.05)
+        else:
+            raise AssertionError("Run never started")
+        clicked = subprocess.run(["swift", "Tests/Fixtures/ClickStop.swift", str(process.pid)], capture_output=True, text=True, timeout=15)
+        assert clicked.returncode == 0, (clicked.stdout, clicked.stderr)
+        stdout, stderr = process.communicate(timeout=30)
+        state = json.loads((stopped_bundle / "run.json").read_text())
+        assert process.returncode == 130 and state["status"] == "cancelled" and state["mediaReady"], (stdout, stderr, state)
+        print("Native Stop button cancelled playback and retained a partial MP4.", flush=True)
+    finally:
+        if process.poll() is None:
+            process.kill(); process.wait()
+
     live_script = script("live", [{"say": "This live-only check has no video recording."}])
     live_bundle = root / "live.showback"
     live = subprocess.run([binary, "run", str(live_script), "--mute", "--live-only", "--out", str(live_bundle)], capture_output=True, text=True, timeout=20)

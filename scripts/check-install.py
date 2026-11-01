@@ -18,8 +18,19 @@ with tempfile.TemporaryDirectory(prefix="showback-install-") as temporary:
     def install(command=None):
         return subprocess.run((command or []) + [str(installer), str(prefix)], cwd=repo, capture_output=True, text=True, timeout=180)
 
-    first = install()
-    assert first.returncode == 0, (first.stdout, first.stderr)
+    catalog = json.loads((repo / "Sources/ShowbackCore/Resources/assets.json").read_text())
+    tokenizer = next(asset for asset in catalog["downloads"] if asset["id"] == "tokenizer")
+    token_cache = Path.home() / "Library/Caches/Showback/Downloads" / tokenizer["sha256"]
+    token_backup = token_cache.with_name(token_cache.name + ".download-test-backup")
+    assert token_cache.exists() and not token_backup.exists()
+    token_cache.rename(token_backup)
+    try:
+        first = install()
+        assert first.returncode == 0, (first.stdout, first.stderr)
+        assert token_cache.exists() and digest(token_cache) == tokenizer["sha256"], "Fresh download was not verified/cached"
+    finally:
+        if token_cache.exists(): token_cache.unlink()
+        token_backup.rename(token_cache)
     app = prefix / "Applications/Showback.app"
     binary = app / "Contents/MacOS/showback"
     entry = prefix / ".local/bin/showback"

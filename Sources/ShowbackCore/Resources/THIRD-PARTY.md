@@ -8,4 +8,4 @@ Showback downloads the following pinned assets during installation. It performs 
 - **Marius and Javert voices:** Unmute Voice Donation Project, CC0. Source recordings `voice-donations/Selfie.wav` and `voice-donations/Butter.wav`. https://huggingface.co/kyutai/tts-voices . Precomputed embeddings are distributed unmodified. https://creativecommons.org/publicdomain/zero/1.0/
 - **agent-desktop v1.0.2 and macOS helper:** Vercel, Inc. and contributors, Apache 2.0. https://github.com/vercel-labs/agent-desktop . See the bundled Apache license.
 
-The distribution does not contain Scrawl source code. Scrawl informed the separation of capture, media timing, visual presentation, and readable results.
+The production app does not contain Scrawl source code. The development-only `Tests/Fixtures/VirtualDisplay.swift` is adapted from Scrawl, copyright (c) 2026 Kit Langton, under the MIT license in `Tests/Fixtures/SCRAWL-LICENSE`. Scrawl informed the separation of capture, media timing, visual presentation, and readable results.

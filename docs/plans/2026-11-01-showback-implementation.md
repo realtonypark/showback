@@ -32,38 +32,38 @@
 **Files:** `docs/verification.md`, ignored `.local/` experiments.
 **Interfaces:** Select an offline TTS invocation and capture/composition strategy that later modules implement.
 
-- [ ] Download pinned official runtime/model assets and verify identities and licenses.
-- [ ] Generate file audio offline; inspect duration, sample rate, samples, and synthesis time without speaker playback. Compare compact and standard models.
+- [x] Download pinned official runtime/model assets and verify identities and licenses.
+- [x] Generate file audio offline; inspect duration, sample rate, samples, and synthesis time without speaker playback. Compare compact and standard models.
 - [ ] On a controlled virtual display, test window capture and presentation effects, including unrelated occluding windows. Document whether capture or composition is required.
-- [ ] Commit measured evidence and any technical ruling.
+- [x] Commit measured evidence and any technical ruling.
 
 ### Task 2: Scripts and desktop execution
 
 **Files:** `Package.swift`, `Sources/ShowbackCore/{Script,Desktop,Process,Paths}.swift`, `Sources/Showback/main.swift`, `Tests/ShowbackCoreTests/ScriptTests.swift`, `examples/`.
 **Interfaces:** `DemoScript.load(URL) throws -> DemoScript`; `Desktop` owns window selection, session lifecycle, target lookup, actions, and expected-state waits. Subprocesses take argument arrays, never shell strings.
 
-- [ ] Write checks for valid scripts, unknown fields/actions, invalid bounds/timeouts, and missing/ambiguous targets. Watch them fail.
-- [ ] Implement strict script decoding, validation command, scoped desktop sessions, and public CLI adaptation.
-- [ ] Run the full Swift tests and controlled app walkthrough. Commit.
+- [x] Write checks for valid scripts, unknown fields/actions, invalid bounds/timeouts, and missing/ambiguous targets. Watch them fail.
+- [x] Implement strict script decoding, validation command, scoped desktop sessions, and public CLI adaptation.
+- [x] Run the full Swift tests and controlled app walkthrough. Commit.
 
 ### Task 3: Narrated runs and recoverable bundles
 
 **Files:** `Sources/ShowbackCore/{Speech,Runner,RunBundle,SettingsStore}.swift`, `Sources/Showback/{Presentation,Recording,Settings,Application}.swift`, focused tests and verification fixtures.
 **Interfaces:** `Speech.prepare` produces local audio clips; `Runner` sequences scenes and writes run facts; `Recording` accepts the selected target and action timeline and returns finalized media paths. Settings calls the speech owner.
 
-- [ ] Write failing tests for asset errors, result status, bundle no-overwrite, and cancellation/failure sequencing.
-- [ ] Implement pre-synthesis, narration/action overlap, checked scene boundaries, Stop/Ctrl+C, live-only mode, and partial-output preservation.
-- [ ] Implement the viable window capture/effect composition path and H.264/AAC output. Keep original video/audio and record actual timing.
-- [ ] Inspect real output frames/audio/manifest and failed/cancelled runs. Run full tests and commit working increments.
+- [x] Write failing tests for asset errors, result status, bundle no-overwrite, and cancellation/failure sequencing.
+- [x] Implement pre-synthesis, narration/action overlap, checked scene boundaries, Stop/Ctrl+C, live-only mode, and partial-output preservation.
+- [x] Implement the viable window capture/effect composition path and H.264/AAC output. Keep original video/audio and record actual timing.
+- [x] Inspect real output frames/audio/manifest and failed/cancelled runs. Run full tests and commit working increments.
 
 ### Task 4: Installation, Settings, and authoring skill
 
 **Files:** `scripts/install.sh`, pinned asset manifest, `skills/showback/SKILL.md`, `README.md`, subsystem rules docs, installer checks.
 **Interfaces:** Installation creates a stable app bundle, CLI entry point, skill, and verified offline asset directory. `showback doctor` reports prerequisites; `showback settings` opens native voice controls.
 
-- [ ] Write installer failure/reinstall checks before implementation; simulate interrupted and corrupted downloads without altering the existing app.
-- [ ] Implement staged verified installation, architecture checks, license notices, voice selection, and direct repair errors.
-- [ ] Test the installed CLI, skill files, Settings UI, reinstall, and offline synthesis. Commit.
+- [x] Write installer failure/reinstall checks before implementation; simulate interrupted and corrupted downloads without altering the existing app.
+- [x] Implement staged verified installation, architecture checks, license notices, voice selection, and direct repair errors.
+- [x] Test the installed CLI, skill files, Settings UI, reinstall, and offline synthesis. Commit.
 
 ### Task 5: End-to-end audit
 
@@ -72,5 +72,7 @@
 
 - [ ] Validate native and browser demos, moving targets, static screens, ambiguity, missing targets, failed expectations, synthesis errors, cancellation, and offline operation.
 - [ ] Inspect MP4 streams, frame samples, screenshots, narration, and run facts; measure synchronization to a 100 ms target and report actual results.
-- [ ] Run full checks and a fresh whole-branch review. Fix material findings with regression checks; commit fixes.
+- [x] Run full checks and a fresh whole-branch review. Fix material findings with regression checks; commit fixes.
 - [ ] Audit every design requirement against current evidence before claiming completion.
+
+GUI movement, occlusion, and transition timing checks remain pending an unlocked macOS session. See `docs/verification.md` for current evidence; no claim of full completion.
