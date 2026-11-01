@@ -127,10 +127,10 @@ struct CaptureFailure: LocalizedError {
         monitor?.invalidate(); monitor = nil
         guard let stream else { return }
         self.stream = nil
-        try await stream.stopCapture()
+        do { try await stream.stopCapture() }
+        catch { state.fail(error.localizedDescription) }
         let deadline = ProcessInfo.processInfo.systemUptime + 10
         while !state.finished {
-            try check()
             guard ProcessInfo.processInfo.systemUptime < deadline else { throw Failure("Source video did not finalize. The partial file was preserved.") }
             try await Task.sleep(nanoseconds: 20_000_000)
         }
@@ -146,7 +146,7 @@ struct CaptureFailure: LocalizedError {
     }
     nonisolated func recordingOutputDidStartRecording(_ recordingOutput: SCRecordingOutput) { state.started() }
     nonisolated func recordingOutput(_ recordingOutput: SCRecordingOutput, didFailWithError error: Error) {
-        state.fail(error.localizedDescription)
+        state.finish(error: error.localizedDescription)
         Task { @MainActor [weak self] in self?.onFailure() }
     }
     nonisolated func recordingOutputDidFinishRecording(_ recordingOutput: SCRecordingOutput) { state.finish() }
@@ -159,7 +159,7 @@ func captureDimensions(viewport: Box, pixelScale: Double) throws -> CGSize {
     return CGSize(width: max(2, Int(viewport.width * scale / 2) * 2), height: max(2, Int(viewport.height * scale / 2) * 2))
 }
 
-private final class RecordingState: @unchecked Sendable {
+final class RecordingState: @unchecked Sendable {
     private let lock = NSLock()
     private var startedAt: Double?
     private var frameTime: Double?
@@ -174,6 +174,10 @@ private final class RecordingState: @unchecked Sendable {
         lock.lock(); defer { lock.unlock() }
         if frameTime == nil { frameTime = time.isFinite && abs(time - ProcessInfo.processInfo.systemUptime) < 10 ? time : ProcessInfo.processInfo.systemUptime }
     }
-    func finish() { lock.lock(); didFinish = true; lock.unlock() }
-    func fail(_ message: String) { lock.lock(); error = message; didFinish = true; lock.unlock() }
+    func finish(error message: String? = nil) {
+        lock.lock(); defer { lock.unlock() }
+        didFinish = true
+        if error == nil { error = message }
+    }
+    func fail(_ message: String) { lock.lock(); if error == nil { error = message }; lock.unlock() }
 }
