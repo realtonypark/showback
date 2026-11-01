@@ -2,7 +2,11 @@
 
 ## make your coding agents show not tell
 
-Showback lets a coding agent demonstrate real software while it narrates. The agent writes a short script; Showback operates the app, checks visible outcomes, and saves a shareable MP4.
+Showback gives a coding agent hands and a voice on your computer. It controls the real app like a person would — clicks, types, and speaks the walkthrough out loud while it works. It talks to you, explains its output, checks the result on screen, and saves the demo as a shareable MP4.
+
+| Before | With Showback |
+|---|---|
+| The agent explains in text what it did. You can't trust it, so you have to build it and click through yourself to validate. | Showback goes through your screen, shows the real behavior, and narrates out loud what it did and how it works. |
 
 [![CI](https://github.com/realtonypark/showback/actions/workflows/ci.yml/badge.svg)](https://github.com/realtonypark/showback/actions/workflows/ci.yml) · [MIT](LICENSE) · macOS · Local speech
 
