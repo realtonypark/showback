@@ -139,13 +139,16 @@ public final class Desktop {
     static func selectWindow(_ windows: [[String: Any]], app: String, title: String?) throws -> DesktopWindow {
         let matches = windows.filter {
             ($0["app_name"] as? String)?.caseInsensitiveCompare(app) == .orderedSame &&
-            $0["accessible"] as? Bool == true && $0["minimized"] as? Bool != true && $0["visible"] as? Bool != false &&
+            $0["minimized"] as? Bool != true && $0["visible"] as? Bool != false &&
             (title == nil || ($0["title"] as? String) == title)
         }
         guard matches.count == 1, let match = matches.first, let id = match["id"] as? String,
               id.hasPrefix("w-"), let number = UInt32(id.dropFirst(2)), number > 0 else {
             let choices = windows.map { "\($0["id"] ?? "?"): \($0["title"] ?? "")" }.joined(separator: ", ")
             throw Failure("Expected one accessible window for \(app); found \(matches.count). Candidates: \(choices)")
+        }
+        guard match["accessible"] as? Bool == true else {
+            throw Failure("The selected window is not accessible yet. Wait for the app to be ready, then retry. Run showback desktop permissions if this persists.")
         }
         return try DesktopWindow(id: id, title: match["title"] as? String ?? "", bounds: Box(match["bounds"]))
     }

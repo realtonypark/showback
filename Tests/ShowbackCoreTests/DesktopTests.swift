@@ -8,6 +8,10 @@ final class DesktopTests: XCTestCase {
         var second = first; second["id"] = "w-2"
         XCTAssertThrowsError(try Desktop.selectWindow([first, second], app: "Example", title: nil))
     }
+    func testInaccessibleMatchingWindowStillMakesSelectionAmbiguous() {
+        var second = first; second["id"] = "w-2"; second["accessible"] = false
+        XCTAssertThrowsError(try Desktop.selectWindow([first, second], app: "Example", title: nil))
+    }
     func testSelectsExactWindowTitleAndPreservesNegativeOrigin() throws {
         var other = first; other["title"] = "Account settings"
         let result = try Desktop.selectWindow([first, other], app: "Example", title: "Account")
