@@ -58,9 +58,24 @@ public final class Desktop {
     }
 
     func select(app: String, title: String?) async throws {
-        let windows = try await call(["list-windows", "--app", app]) as? [[String: Any]] ?? []
-        let selected = try Self.selectWindow(windows, app: app, title: title)
-        self.app = app; self.title = title; self.window = selected
+        // ponytail: poll for a slow launch; fail fast only on ambiguity, which waiting cannot fix.
+        let deadline = ProcessInfo.processInfo.systemUptime + 15
+        while true {
+            let windows = try await call(["list-windows", "--app", app]) as? [[String: Any]] ?? []
+            do {
+                let selected = try Self.selectWindow(windows, app: app, title: title)
+                self.app = app; self.title = title; self.window = selected
+                return
+            } catch {
+                let matches = windows.filter {
+                    ($0["app_name"] as? String)?.caseInsensitiveCompare(app) == .orderedSame &&
+                    $0["minimized"] as? Bool != true && $0["visible"] as? Bool != false &&
+                    (title == nil || ($0["title"] as? String) == title)
+                }
+                guard matches.count <= 1, ProcessInfo.processInfo.systemUptime < deadline else { throw error }
+                try await Task.sleep(nanoseconds: 250_000_000)
+            }
+        }
     }
 
     public func end() async throws {
@@ -97,7 +112,15 @@ public final class Desktop {
     }
 
     public func focus() async throws {
-        _ = try await call(["focus-window", "--window-id", try selected().id])
+        // ponytail: focus is idempotent presentation, not a mutating action; poll through transient loss.
+        let deadline = ProcessInfo.processInfo.systemUptime + 5
+        while true {
+            do { _ = try await call(["focus-window", "--window-id", try selected().id]); return }
+            catch {
+                guard ProcessInfo.processInfo.systemUptime < deadline else { throw error }
+                try await Task.sleep(nanoseconds: 250_000_000)
+            }
+        }
     }
 
     public func selected() throws -> DesktopWindow {
@@ -118,6 +141,8 @@ public final class Desktop {
         case .select(let target, let option): selector = target; command = "select"; suffix = [option]
         case .scroll(let target, let direction, let amount):
             selector = target; command = "scroll"; suffix = ["--direction", direction, "--amount", String(amount)]
+        case .setValue(let target, let text): selector = target; command = "set-value"; suffix = [text]
+        case .verb(let name, let target): selector = target; command = name
         }
         let matches = try await find(selector)
         guard matches.count == 1, let match = matches.first else {
@@ -138,17 +163,43 @@ public final class Desktop {
 
     @discardableResult public func waitFor(_ expected: Expected) async throws -> Any {
         let deadline = ProcessInfo.processInfo.systemUptime + expected.timeout
+        var lastError: Error?
         repeat {
             try Task.checkCancellation()
-            let matches = try await find(expected.target)
-            if !matches.isEmpty { return ["matched": matches.count, "target": matches.first!] }
+            // ponytail: find is read-only; retry transient incomplete reads inside the budget.
+            do {
+                let matches = try await find(expected.target, deadline: deadline)
+                lastError = nil
+                if !matches.isEmpty { return ["matched": matches.count, "target": matches.first!] }
+            } catch { lastError = error }
             try await Task.sleep(nanoseconds: 150_000_000)
         } while ProcessInfo.processInfo.systemUptime < deadline
+        if let lastError { throw lastError }
         throw Failure("Expected UI state did not appear within \(expected.timeout) seconds.")
     }
 
-    private func find(_ target: Selector) async throws -> [[String: Any]] {
-        var args = ["find", "--app", app, "--window-id", try selected().id, "--exact", "--limit", "0"]
+    @discardableResult public func waitForAbsent(_ expected: Expected) async throws -> Any {
+        let deadline = ProcessInfo.processInfo.systemUptime + expected.timeout
+        var lastError: Error?
+        repeat {
+            try Task.checkCancellation()
+            do {
+                let matches = try await find(expected.target, deadline: deadline)
+                lastError = nil
+                if matches.isEmpty { return ["absent": true] }
+            } catch { lastError = error }
+            try await Task.sleep(nanoseconds: 150_000_000)
+        } while ProcessInfo.processInfo.systemUptime < deadline
+        if let lastError { throw lastError }
+        throw Failure("Expected UI state was still present after \(expected.timeout) seconds.")
+    }
+
+    private func find(_ target: Selector, deadline: Double? = nil) async throws -> [[String: Any]] {
+        // ponytail: dense web trees exhaust the 5s default; cap each attempt at the caller's remaining budget (max 20s).
+        let timeoutMs = deadline.map { max(1, min(20_000, Int(($0 - ProcessInfo.processInfo.systemUptime) * 1000))) } ?? 20_000
+        // Text targets match by substring (see directMatches), so --exact applies only without text.
+        var args = ["find", "--app", app, "--window-id", try selected().id, "--limit", "0", "--timeout-ms", String(timeoutMs)]
+        if target.text == nil { args.append("--exact") }
         for (flag, value) in [("--role", target.role), ("--name", target.name), ("--text", target.text), ("--native-id", target.nativeID)] {
             if let value { args += [flag, value] }
         }
@@ -189,9 +240,11 @@ public final class Desktop {
     }
 
     static func directMatches(_ matches: [[String: Any]], target: Selector) -> [[String: Any]] {
-        guard let text = target.text else { return matches }
-        return matches.filter { match in
-            ["name", "value", "description"].compactMap { match[$0] as? String }.contains { $0.localizedCaseInsensitiveContains(text) }
+        // Text matches by substring; name stays exact so a combined selector cannot pass on a near-name.
+        matches.filter { match in
+            if let name = target.name, (match["name"] as? String)?.caseInsensitiveCompare(name) != .orderedSame { return false }
+            guard let text = target.text else { return true }
+            return ["name", "value", "description"].compactMap { match[$0] as? String }.contains { $0.localizedCaseInsensitiveContains(text) }
         }
     }
 }

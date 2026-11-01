@@ -88,6 +88,10 @@ import AppKit
                             let observed = try await desktop.waitFor(expected)
                             try bundle.record("checked", at: time(), scene: index + 1, data: observed)
                         }
+                        if let absent = scene.absent {
+                            let observed = try await desktop.waitForAbsent(absent)
+                            try bundle.record("absent-checked", at: time(), scene: index + 1, data: observed)
+                        }
                         try await narration.value
                     }, onCancel: { narration.cancel() })
                 } catch {
@@ -100,7 +104,7 @@ import AppKit
                     }
                     throw error
                 }
-                if let recording, !scene.actions.isEmpty || scene.expect != nil {
+                if let recording, !scene.actions.isEmpty || scene.expect != nil || scene.absent != nil {
                     try await recording.screenshot(to: bundle.root.appendingPathComponent(String(format: "frames/scene-%02d.png", index + 1)),
                                                    pointer: presentation!.timeline, at: time())
                 }

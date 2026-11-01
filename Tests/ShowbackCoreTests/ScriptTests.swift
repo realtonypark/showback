@@ -18,9 +18,29 @@ final class ScriptTests: XCTestCase {
         XCTAssertNoThrow(try DemoScript.parse(data))
     }
 
+    func testAcceptsAbsentCheckForFixedErrorProof() throws {
+        let data = Data(#"{"version":1,"title":"Fixed","app":"Fixture","scenes":[{"actions":[{"click":{"role":"button","name":"Open"}}],"expect":{"text":"Welcome"},"absent":{"text":"404","timeout":5}}]}"#.utf8)
+        let parsed = try DemoScript.parse(data)
+        XCTAssertEqual(parsed.scenes.first?.absent?.target.text, "404")
+        XCTAssertEqual(parsed.scenes.first?.absent?.timeout, 5)
+        let bad = Data(#"{"version":1,"title":"Fixed","app":"Fixture","scenes":[{"absent":{"text":"404","timeout":true}}]}"#.utf8)
+        XCTAssertThrowsError(try DemoScript.parse(bad))
+    }
+
     func testRejectsUnknownFieldsInsteadOfSilentlySkippingChecks() {
         let data = Data(#"{"version":1,"title":"Login","app":"Fixture","scenes":[{"say":"Done","expects":{"text":"Welcome"}}]}"#.utf8)
         XCTAssertThrowsError(try DemoScript.parse(data))
+    }
+
+    func testAcceptsGeneralControlVerbsForAgentChosenPresentation() {
+        for action in [#"{"set-value":{"target":{"role":"textfield","name":"Note"},"text":"hello"}}"#,
+                       #"{"clear":{"role":"textfield","name":"Note"}}"#, #"{"focus":{"role":"button","name":"Home"}}"#,
+                       #"{"check":{"role":"checkbox","name":"Done"}}"#, #"{"uncheck":{"role":"checkbox","name":"Done"}}"#,
+                       #"{"toggle":{"role":"checkbox","name":"Done"}}"#, #"{"expand":{"role":"disclosure","name":"More"}}"#,
+                       #"{"collapse":{"role":"disclosure","name":"More"}}"#, #"{"scroll-to":{"role":"button","name":"Save"}}"#] {
+            let data = Data("{\"version\":1,\"title\":\"Present\",\"app\":\"Fixture\",\"scenes\":[{\"actions\":[\(action)]}]}".utf8)
+            XCTAssertNoThrow(try DemoScript.parse(data), action)
+        }
     }
 
     func testRejectsUnknownAction() {
