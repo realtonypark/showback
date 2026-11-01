@@ -8,6 +8,8 @@ import AppKit
     private let preview = NSButton(title: "Preview", target: nil, action: nil)
     private var previewTask: Task<Void, Never>?
     private var playback: AudioPlayback?
+    private var initialError: Error?
+    private var modelReady = false
 
     init(assets: Assets) throws {
         self.assets = assets
@@ -25,8 +27,13 @@ import AppKit
         }
         voices.frame = NSRect(x: 132, y: 137, width: 306, height: 32)
         voices.addItems(withTitles: catalog.voices.map(\.name))
-        let selected = try SettingsStore().voice(in: catalog)
-        voices.selectItem(at: catalog.voices.firstIndex(where: { $0.id == selected }) ?? 0)
+        do {
+            let selected = try SettingsStore().voice(in: catalog)
+            voices.selectItem(at: catalog.voices.firstIndex(where: { $0.id == selected }) ?? 0)
+        } catch {
+            initialError = error
+            voices.selectItem(at: -1)
+        }
         voices.target = self; voices.action = #selector(changeVoice)
         voices.setAccessibilityLabel("Voice")
         content.addSubview(voices)
@@ -38,28 +45,38 @@ import AppKit
         content.addSubview(preview)
         do {
             try assets.verifyInstallation()
+            modelReady = true
+            preview.isEnabled = voices.indexOfSelectedItem >= 0
             let status = NSImageView(frame: NSRect(x: 416, y: 98, width: 18, height: 18))
             status.image = NSImage(systemSymbolName: "checkmark.circle.fill", accessibilityDescription: "Model installed")
             status.contentTintColor = .systemGreen
             content.addSubview(status)
         } catch {
-            preview.isEnabled = false
+            preview.isHidden = true
             let status = NSTextField(wrappingLabelWithString: error.localizedDescription)
             status.frame = NSRect(x: 132, y: 30, width: 306, height: 56)
             content.addSubview(status)
         }
     }
 
-    func show() { window.center(); window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true) }
+    func show() {
+        window.center(); window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
+        if let error = initialError { initialError = nil; showError(error) }
+    }
     func windowWillClose(_ notification: Notification) { previewTask?.cancel(); playback?.stop() }
 
     @objc private func changeVoice() {
         previewTask?.cancel(); playback?.stop()
-        do { try SettingsStore().save(voice: catalog.voices[voices.indexOfSelectedItem].id, in: catalog) }
+        guard catalog.voices.indices.contains(voices.indexOfSelectedItem) else { return }
+        do {
+            try SettingsStore().save(voice: catalog.voices[voices.indexOfSelectedItem].id, in: catalog)
+            preview.isEnabled = modelReady
+        }
         catch { showError(error) }
     }
 
     @objc private func previewVoice() {
+        guard catalog.voices.indices.contains(voices.indexOfSelectedItem) else { return }
         if previewTask != nil { previewTask?.cancel(); playback?.stop(); return }
         preview.title = "Stop"
         let voice = catalog.voices[voices.indexOfSelectedItem].id

@@ -94,12 +94,13 @@ public enum Action {
     case point(Selector)
     case click(Selector)
     case type(Selector, String)
+    case select(Selector, String)
     case press(String)
     case scroll(Selector, String, Int)
     case wait(Expected)
 
     static func parse(_ value: Any) throws -> Action {
-        let fields = try Fields(value, keys: ["point", "click", "type", "press", "scroll", "wait"])
+        let fields = try Fields(value, keys: ["point", "click", "type", "select", "press", "scroll", "wait"])
         guard fields.values.count == 1, let (key, value) = fields.values.first else { throw Failure("An action must contain exactly one command.") }
         switch key {
         case "point": return try .point(Selector.parse(value))
@@ -109,6 +110,9 @@ public enum Action {
         case "type":
             let input = try Fields(value, keys: ["target", "text"])
             return try .type(Selector.parse(input.required("target")), input.string("text", max: 10_000))
+        case "select":
+            let input = try Fields(value, keys: ["target", "option"])
+            return try .select(Selector.parse(input.required("target")), input.string("option"))
         case "scroll":
             let input = try Fields(value, keys: ["target", "direction", "amount"])
             let direction = try input.string("direction")

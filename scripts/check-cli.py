@@ -2,6 +2,7 @@
 """Check real CLI startup and failure status without changing an application."""
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -13,7 +14,7 @@ with tempfile.TemporaryDirectory(prefix="showback-cli-") as temporary:
     script = root / "demo.json"
     script.write_text(json.dumps({"version": 1, "title": "Missing app", "app": "Showback Nonexistent Verification App", "scenes": [{"say": "This must not play."}]}))
     version = subprocess.run([binary, "--version"], capture_output=True, text=True, timeout=10)
-    assert version.returncode == 0 and "Showback 0.1.0" in version.stdout, version
+    assert version.returncode == 0 and re.fullmatch(r"Showback \d+\.\d+\.\d+\n", version.stdout), version
     validated = subprocess.run([binary, "validate", str(script)], capture_output=True, text=True, timeout=10)
     assert validated.returncode == 0 and "Valid:" in validated.stdout, validated
     invalid = subprocess.run([binary, "run", str(script), "--slient"], capture_output=True, text=True, timeout=10)

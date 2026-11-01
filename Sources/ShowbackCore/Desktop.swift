@@ -41,10 +41,10 @@ public final class Desktop {
         let status = try await call(["permissions"])
         guard let permissions = status as? [String: Any],
               (permissions["accessibility"] as? [String: Any])?["state"] as? String == "granted" else {
-            throw Failure("Accessibility permission is required. Run agent-desktop permissions --guide.")
+            throw Failure("Accessibility permission is required. Run showback desktop permissions --guide.")
         }
         if recording, (permissions["screen_recording"] as? [String: Any])?["state"] as? String != "granted" {
-            throw Failure("Screen Recording permission is required. Run agent-desktop permissions --guide.")
+            throw Failure("Screen Recording permission is required. Run showback desktop permissions --guide.")
         }
         try await select(app: app, title: title)
     }
@@ -80,6 +80,7 @@ public final class Desktop {
         case .point(let target): selector = target; command = "point"
         case .click(let target): selector = target; command = "click"
         case .type(let target, let text): selector = target; command = "type"; suffix = [text]
+        case .select(let target, let option): selector = target; command = "select"; suffix = [option]
         case .scroll(let target, let direction, let amount):
             selector = target; command = "scroll"; suffix = ["--direction", direction, "--amount", String(amount)]
         }

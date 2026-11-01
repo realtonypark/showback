@@ -36,7 +36,7 @@ import AppKit
             presentation = Presentation(viewport: initialViewport, epoch: epoch)
             stop = StopControl(viewport: initialViewport, onStop: onStop)
             if !options.liveOnly {
-                recording = try await Recording.start(window: window, displayID: script.displayID, source: bundle.root.appendingPathComponent("recording.mp4"))
+                recording = try await Recording.start(window: window, displayID: script.displayID, source: bundle.root.appendingPathComponent("recording.mp4"), onFailure: onStop)
                 epoch = recording!.epoch
             } else { epoch = ProcessInfo.processInfo.systemUptime }
             let viewport: Box
@@ -65,7 +65,11 @@ import AppKit
                 }
                 try bundle.record("scene", at: time(), scene: index + 1, data: ["say": scene.say ?? "", "app": sceneApp, "windowID": currentWindow.number])
                 let playback = try clips[index].map { try AudioPlayback(clip: $0, epoch: epoch, mute: options.mute) }
-                if let playback { segments.append(playback.segment) }
+                if let playback {
+                    segments.append(playback.segment)
+                    try bundle.record("narration-start", at: playback.segment.start, scene: index + 1,
+                                      data: ["clock": playback.usesDeviceClock ? "audio-device" : "monotonic", "muted": options.mute])
+                }
                 let narration = Task { @MainActor in try await playback?.wait() }
                 do {
                     try await withTaskCancellationHandler(operation: {
@@ -106,8 +110,12 @@ import AppKit
                 }
             }
         } catch {
-            status = Task.isCancelled || error is CancellationError ? .cancelled : .failed
-            problem = status == .cancelled ? "Cancelled." : error.localizedDescription
+            if let message = recording?.failureReason ?? (error as? CaptureFailure)?.message {
+                status = .failed; problem = message
+            } else {
+                status = Task.isCancelled || error is CancellationError ? .cancelled : .failed
+                problem = status == .cancelled ? "Cancelled." : error.localizedDescription
+            }
         }
         let pointer = presentation?.timeline ?? PointerTimeline()
         presentation?.close(); stop?.close()
@@ -128,7 +136,10 @@ import AppKit
             return (mediaReady, error)
         }
         let (mediaReady, cleanupError) = await cleanup.value
-        if let cleanupError { status = status == .cancelled ? .cancelled : .failed; problem = [problem, cleanupError].compactMap { $0 }.joined(separator: "\n") }
+        if let cleanupError {
+            status = status == .cancelled ? .cancelled : .failed
+            if problem != cleanupError { problem = [problem, cleanupError].compactMap { $0 }.joined(separator: "\n") }
+        }
         if Task.isCancelled, status == .completed { status = .cancelled; problem = "Cancelled." }
         try bundle.finish(status, error: problem, mediaReady: mediaReady)
         print("\(status.rawValue): \(bundle.root.path)"); fflush(stdout)

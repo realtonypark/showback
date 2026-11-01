@@ -3,9 +3,16 @@ import AVFoundation
 import ScreenCaptureKit
 import CoreImage
 
+struct CaptureFailure: LocalizedError {
+    let message: String
+    var errorDescription: String? { message }
+}
+
 @MainActor final class Recording: NSObject, SCStreamDelegate, SCStreamOutput, SCRecordingOutputDelegate {
     private let state = RecordingState()
     private var stream: SCStream?
+    private var monitor: Timer?
+    private let onFailure: @MainActor () -> Void
     private let windowID: UInt32
     private let displayID: UInt32?
     private let filter: SCContentFilter
@@ -14,7 +21,7 @@ import CoreImage
     private(set) var epoch: Double = 0
     let source: URL
 
-    static func start(window: DesktopWindow, displayID: UInt32?, source: URL) async throws -> Recording {
+    static func start(window: DesktopWindow, displayID: UInt32?, source: URL, onFailure: @escaping @MainActor () -> Void) async throws -> Recording {
         guard CGPreflightScreenCaptureAccess() else { throw Failure("Showback needs Screen Recording permission. Enable it for the app that launches Showback in System Settings.") }
         let content = try await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: true)
         guard let selected = content.windows.first(where: { $0.windowID == window.number }) else { throw Failure("The selected window is no longer available for capture.") }
@@ -38,7 +45,7 @@ import CoreImage
         config.showsCursor = false
         config.ignoreShadowsSingleWindow = true
         config.capturesAudio = false
-        let recording = Recording(windowID: window.number, displayID: displayID, filter: filter, configuration: config, viewport: viewport, source: source)
+        let recording = Recording(windowID: window.number, displayID: displayID, filter: filter, configuration: config, viewport: viewport, source: source, onFailure: onFailure)
         let outputConfig = SCRecordingOutputConfiguration()
         outputConfig.outputURL = source
         outputConfig.videoCodecType = .h264
@@ -57,34 +64,49 @@ import CoreImage
                 try await Task.sleep(nanoseconds: 20_000_000)
             }
             recording.epoch = recording.state.startTime
+            recording.monitor = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak recording] _ in
+                guard let recording, recording.state.problem == nil else { return }
+                do {
+                    if let displayID {
+                        guard CGDisplayIsOnline(displayID) != 0 else { throw CaptureFailure(message: "The captured display disconnected.") }
+                    } else { _ = try recording.viewport() }
+                } catch {
+                    recording.state.fail(error.localizedDescription)
+                    recording.onFailure()
+                }
+            }
             return recording
         } catch {
             try? await stream.stopCapture()
+            if let message = recording.state.problem { throw CaptureFailure(message: message) }
             throw error
         }
     }
 
-    private init(windowID: UInt32, displayID: UInt32?, filter: SCContentFilter, configuration: SCStreamConfiguration, viewport: Box, source: URL) {
+    private init(windowID: UInt32, displayID: UInt32?, filter: SCContentFilter, configuration: SCStreamConfiguration, viewport: Box, source: URL, onFailure: @escaping @MainActor () -> Void) {
         self.windowID = windowID; self.displayID = displayID; self.filter = filter; self.configuration = configuration
         self.initialViewport = viewport; self.source = source
+        self.onFailure = onFailure
     }
 
-    func check() throws { if let message = state.problem { throw Failure(message) } }
+    var failureReason: String? { state.problem }
+    func check() throws { if let message = state.problem { throw CaptureFailure(message: message) } }
 
     func viewport() throws -> Box {
         if displayID != nil { return initialViewport }
         let box = try Self.windowBounds(windowID)
         guard abs(box.width - initialViewport.width) < 2, abs(box.height - initialViewport.height) < 2 else {
-            throw Failure("The window was resized during the demo. Restart with its new size.")
+            throw CaptureFailure(message: "The window was resized during the demo. Restart with its new size.")
         }
         return box
     }
 
     static func windowBounds(_ id: UInt32) throws -> Box {
         guard let windows = CGWindowListCopyWindowInfo(.optionIncludingWindow, id) as? [[String: Any]],
-              let info = windows.first, let raw = info[kCGWindowBounds as String] as? [String: Any],
+              let info = windows.first, info[kCGWindowIsOnscreen as String] as? Bool == true,
+              let raw = info[kCGWindowBounds as String] as? [String: Any],
               let x = raw["X"] as? Double, let y = raw["Y"] as? Double,
-              let width = raw["Width"] as? Double, let height = raw["Height"] as? Double else { throw Failure("The selected window disappeared.") }
+              let width = raw["Width"] as? Double, let height = raw["Height"] as? Double else { throw CaptureFailure(message: "The selected window is hidden or closed.") }
         return Box(x: x, y: y, width: width, height: height)
     }
 
@@ -100,6 +122,7 @@ import CoreImage
     }
 
     func stop() async throws {
+        monitor?.invalidate(); monitor = nil
         guard let stream else { return }
         self.stream = nil
         try await stream.stopCapture()
@@ -115,9 +138,15 @@ import CoreImage
     nonisolated func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
         if type == .screen, sampleBuffer.isValid, sampleBuffer.imageBuffer != nil { state.sawFrame(sampleBuffer.presentationTimeStamp.seconds) }
     }
-    nonisolated func stream(_ stream: SCStream, didStopWithError error: Error) { state.fail(error.localizedDescription) }
+    nonisolated func stream(_ stream: SCStream, didStopWithError error: Error) {
+        state.fail(error.localizedDescription)
+        Task { @MainActor [weak self] in self?.onFailure() }
+    }
     nonisolated func recordingOutputDidStartRecording(_ recordingOutput: SCRecordingOutput) { state.started() }
-    nonisolated func recordingOutput(_ recordingOutput: SCRecordingOutput, didFailWithError error: Error) { state.fail(error.localizedDescription) }
+    nonisolated func recordingOutput(_ recordingOutput: SCRecordingOutput, didFailWithError error: Error) {
+        state.fail(error.localizedDescription)
+        Task { @MainActor [weak self] in self?.onFailure() }
+    }
     nonisolated func recordingOutputDidFinishRecording(_ recordingOutput: SCRecordingOutput) { state.finish() }
 }
 

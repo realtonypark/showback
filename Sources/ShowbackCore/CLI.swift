@@ -36,7 +36,9 @@ public enum CLI {
         guard let command = arguments.first else { print(help); return true }
         switch command {
         case "--help", "help", "-h": print(help)
-        case "--version": print("Showback 0.1.0")
+        case "--version":
+            let version = try String(contentsOf: Assets.resource("version", "txt"), encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
+            print("Showback \(version)")
         case "desktop":
             let assets = try Paths.assets()
             try assets.verifyInstallation()

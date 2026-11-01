@@ -81,3 +81,18 @@ with tempfile.TemporaryDirectory(prefix="showback-runs-") as temporary:
                              env=environment, capture_output=True, text=True, timeout=20)
     assert special.returncode == 0, special
     print("Model and output paths with spaces, #, and colon worked.")
+
+    # This closes only the isolated test fixture's window; restart it before another suite run.
+    closing = script("capture-loss", [{
+        "say": "This narration should stop as soon as the recording source disappears. It must not keep talking after the demonstration window is closed.",
+        "actions": [{"click": {"role": "button", "name": "Close"}}]
+    }, {"say": "This later scene must never run."}])
+    closed_bundle = root / "capture-loss.showback"
+    started = time.monotonic()
+    lost = subprocess.run([binary, "run", str(closing), "--mute", "--out", str(closed_bundle)], capture_output=True, text=True, timeout=30)
+    elapsed = time.monotonic() - started
+    state = json.loads((closed_bundle / "run.json").read_text())
+    assert lost.returncode == 1 and state["status"] == "failed", (lost, state)
+    assert elapsed < 5, ("Capture loss did not stop narration promptly", elapsed, lost.stdout, lost.stderr)
+    assert [event["scene"] for event in state["events"] if event["kind"] == "scene"] == [1], state
+    print("Capture loss stopped narration and prevented subsequent scenes.")

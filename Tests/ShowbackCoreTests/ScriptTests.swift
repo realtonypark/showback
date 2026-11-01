@@ -2,6 +2,10 @@ import XCTest
 @testable import ShowbackCore
 
 final class ScriptTests: XCTestCase {
+    func testAcceptsNativeOptionSelection() {
+        let data = Data(#"{"version":1,"title":"Voice","app":"Showback","scenes":[{"actions":[{"select":{"target":{"role":"combobox","name":"Voice"},"option":"Marius"}}],"expect":{"role":"combobox","text":"Marius"}}]}"#.utf8)
+        XCTAssertNoThrow(try DemoScript.parse(data))
+    }
     func testSceneWindowSwitchRequiresExplicitDisplayCapture() throws {
         let scene = #""scenes":[{"app":"Second app","window":{"title":"Second window"},"say":"Now inspect the other app."}]"#
         let windowOnly = Data("{\"version\":1,\"title\":\"Multi-app\",\"app\":\"First app\",\(scene)}".utf8)
