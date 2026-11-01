@@ -1,0 +1,28 @@
+Sources/ShowbackCore/Desktop.swift
+  h_05e5164a29872e 61-78,115-123,164,167-172,175,179-194,196-197
+Sources/ShowbackCore/RunBundle.swift
+  h_05e5164a29872e 73,75-76
+Sources/ShowbackCore/Runner.swift
+  h_05e5164a29872e 91-94,107
+Sources/ShowbackCore/Script.swift
+  h_05e5164a29872e 35,45-47,57,60-61
+Tests/ShowbackCoreTests/DesktopTests.swift
+  h_05e5164a29872e 73-172
+Tests/ShowbackCoreTests/ScriptTests.swift
+  h_05e5164a29872e 21-27
+docs/scripts.md
+  h_05e5164a29872e 7
+skills/showback/SKILL.md
+  h_05e5164a29872e 50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "061fa0884800f1562e89feeaf1464e67796c77b2",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
