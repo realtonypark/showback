@@ -13,7 +13,7 @@ Initial research and accepted constraints from the design interview. Implementat
 
 ## Verified local state
 
-- `/Users/tpark/exp/showback` is an empty Git repository on `main`, without commits.
+- At initial inspection, `/Users/tpark/exp/showback` was an empty Git repository on `main`. Research and glossary are now committed there; implementation has not started.
 - The installed agent-desktop npm package reports version 1.0.2; its JSON protocol reports version 2.5.
 - `agent-desktop status` reports macOS with Accessibility and Screen Recording granted. Automation permission is unknown.
 - Swift, macOS `say`, and FFmpeg are installed. Their presence does not establish recording or speech quality.
@@ -56,25 +56,26 @@ Scrawl is MIT licensed, copyright Kit Langton. Preserve its license notice if co
 - macOS first, including browser and native applications.
 - Prepared scripts with runtime target lookup, waits for expected states, and stop on failure.
 - Explicit invocation through a skill and CLI, rather than automatic demos after every agent completion.
-- Three speech sources: Showback Cloud (provided free through OpenRouter free models), OpenRouter with the user's own key, and local speech models downloaded only with opt-in.
-- Local speech is the default. The specific synthesis model and first-use download flow remain to be decided.
+- Local speech only. The latest decision removes Showback Cloud and OpenRouter BYOK from scope.
+- Download and install the curated model alongside the CLI, runtime dependencies, and agent skill in the same installation flow. Do not defer the model download to the first demo.
 - English narration first.
-- CLI and agent skill with a small native Settings window for voices, model downloads, and keys; no full desktop app for the first version.
+- CLI and agent skill with a small native Settings window for voice selection and local model status; no full desktop app, provider settings, or keys.
 - One curated local model with a few voices initially, rather than a model library.
 - Record every demo by default, with a live-only option.
 - Capture one app window by default. Demos spanning apps or windows require an explicit display choice.
 - During implementation, commit in small, reviewable steps.
-- Requested cloud candidates: `fish-audio/s2.1-pro-free:free` and `heygen/heygen-voice-1-turbo:free`.
+- Narration may overlap cursor movement and actions. Prepare audio before interaction and speak outcome claims only after the expected state has been checked.
+- Stop only initially, through Ctrl+C or a small Stop control. Preserve partial output and mark the run cancelled. No pause/resume.
 - UI should use clear layout and direct controls; omit taglines, redundant helper text, and secondary labels.
 - Make implementation trade-offs for UX, developer experience, and agent experience while preserving behavior. Use Ponytail full mode.
 
-## Speech research — November 1, 2026
+## Earlier cloud research — superseded by local-only scope
 
 - The official [Fish Audio model page](https://openrouter.ai/fish-audio/s2.1-pro-free:free) describes a free variant intended for testing, prototyping, and low-volume applications, without production latency or availability guarantees.
 - The official [HeyGen model page](https://openrouter.ai/heygen/heygen-voice-1-turbo:free) confirms retirement on November 30, 2026. Do not make this the sole basis of Showback Cloud.
 - Neither exact ID appeared in the unauthenticated `https://openrouter.ai/api/v1/models` response during this check, despite both official model pages being present. Model-page presence alone does not verify API usability. Confirm the current speech-specific discovery and request contract before choosing a default.
 - The screenshots are model-picker interaction references. For example, [Parakeet](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2) is a speech-recognition model; it does not generate narration. Select actual speech-synthesis models for local output.
-- A credential was supplied in chat. Its value is intentionally absent from all project files and tool calls. No authenticated requests were made. A distributed app must not contain the shared provider credential; Showback Cloud needs a server-side credential boundary. Rotate the supplied credential before deployment.
+- A credential was supplied in chat. Its value is intentionally absent from all project files and tool calls. No authenticated requests were made. The local-only design needs no provider credentials or cloud relay.
 
 ## Local synthesis candidates
 
@@ -88,9 +89,9 @@ Read-only source research identifies [Pocket TTS](https://github.com/kyutai-labs
 
 No candidate has been downloaded or executed. Compatibility, download size of the complete distribution, offline behavior, narration quality, and latency require validation before selecting a default model.
 
-## Remaining decisions
+## Proposed implementation choices
 
-Next decisions include cloud hosting and service limits, the local synthesis model, first-use download flow, narration pacing, user interruption, and speech-failure behavior. The script contract, failure reporting, bundle contents, and first acceptance demo also remain open. Verify provider APIs and local model compatibility before asking the user to choose between implementations.
+The complete proposed design is in `docs/plans/2026-11-01-showback-design.md`. The model/runtime selection and the recording path require bounded implementation checks rather than more preference questions. Validate local TTS and window-plus-overlay capture before committing to those technical choices. The user still needs to confirm shared understanding of the complete design before implementation, as required by the requested grilling skill.
 
 ## Checks still needed
 
