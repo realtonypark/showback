@@ -168,7 +168,7 @@ public final class Desktop {
             try Task.checkCancellation()
             // ponytail: find is read-only; retry transient incomplete reads inside the budget.
             do {
-                let matches = try await find(expected.target)
+                let matches = try await find(expected.target, deadline: deadline)
                 lastError = nil
                 if !matches.isEmpty { return ["matched": matches.count, "target": matches.first!] }
             } catch { lastError = error }
@@ -184,7 +184,7 @@ public final class Desktop {
         repeat {
             try Task.checkCancellation()
             do {
-                let matches = try await find(expected.target)
+                let matches = try await find(expected.target, deadline: deadline)
                 lastError = nil
                 if matches.isEmpty { return ["absent": true] }
             } catch { lastError = error }
@@ -194,10 +194,11 @@ public final class Desktop {
         throw Failure("Expected UI state was still present after \(expected.timeout) seconds.")
     }
 
-    private func find(_ target: Selector) async throws -> [[String: Any]] {
-        // ponytail: dense web trees exhaust the 5s default; 20s stays inside the 35s command bound.
+    private func find(_ target: Selector, deadline: Double? = nil) async throws -> [[String: Any]] {
+        // ponytail: dense web trees exhaust the 5s default; cap each attempt at the caller's remaining budget (max 20s).
+        let timeoutMs = deadline.map { max(1, min(20_000, Int(($0 - ProcessInfo.processInfo.systemUptime) * 1000))) } ?? 20_000
         // Text targets match by substring (see directMatches), so --exact applies only without text.
-        var args = ["find", "--app", app, "--window-id", try selected().id, "--limit", "0", "--timeout-ms", "20000"]
+        var args = ["find", "--app", app, "--window-id", try selected().id, "--limit", "0", "--timeout-ms", String(timeoutMs)]
         if target.text == nil { args.append("--exact") }
         for (flag, value) in [("--role", target.role), ("--name", target.name), ("--text", target.text), ("--native-id", target.nativeID)] {
             if let value { args += [flag, value] }
@@ -239,9 +240,11 @@ public final class Desktop {
     }
 
     static func directMatches(_ matches: [[String: Any]], target: Selector) -> [[String: Any]] {
-        guard let text = target.text else { return matches }
-        return matches.filter { match in
-            ["name", "value", "description"].compactMap { match[$0] as? String }.contains { $0.localizedCaseInsensitiveContains(text) }
+        // Text matches by substring; name stays exact so a combined selector cannot pass on a near-name.
+        matches.filter { match in
+            if let name = target.name, (match["name"] as? String)?.caseInsensitiveCompare(name) != .orderedSame { return false }
+            guard let text = target.text else { return true }
+            return ["name", "value", "description"].compactMap { match[$0] as? String }.contains { $0.localizedCaseInsensitiveContains(text) }
         }
     }
 }

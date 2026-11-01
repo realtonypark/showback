@@ -18,9 +18,11 @@ final class ScriptTests: XCTestCase {
         XCTAssertNoThrow(try DemoScript.parse(data))
     }
 
-    func testAcceptsAbsentCheckForFixedErrorProof() {
+    func testAcceptsAbsentCheckForFixedErrorProof() throws {
         let data = Data(#"{"version":1,"title":"Fixed","app":"Fixture","scenes":[{"actions":[{"click":{"role":"button","name":"Open"}}],"expect":{"text":"Welcome"},"absent":{"text":"404","timeout":5}}]}"#.utf8)
-        XCTAssertNoThrow(try DemoScript.parse(data))
+        let parsed = try DemoScript.parse(data)
+        XCTAssertEqual(parsed.scenes.first?.absent?.target.text, "404")
+        XCTAssertEqual(parsed.scenes.first?.absent?.timeout, 5)
         let bad = Data(#"{"version":1,"title":"Fixed","app":"Fixture","scenes":[{"absent":{"text":"404","timeout":true}}]}"#.utf8)
         XCTAssertThrowsError(try DemoScript.parse(bad))
     }

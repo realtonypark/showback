@@ -106,7 +106,7 @@ final class DesktopTests: XCTestCase {
         printf '%s\\n' "$*" >> '\(log.path)'
         case "$1 $2" in
           list-windows*) printf '%s' '\(windows)' ;;
-          find*) printf '%s' '{"ok":true,"data":{"matches":[{"ref_id":"@s1:e1"}]}}' ;;
+          find*) printf '%s' '{"ok":true,"data":{"matches":[{"ref_id":"@s1:e1","name":"Note"}]}}' ;;
           get*) printf '%s' '{"ok":true,"data":{"value":{"x":0.0,"y":0.0,"width":10.0,"height":10.0}}}' ;;
           *) printf '%s' '{"ok":true,"data":{}}' ;;
         esac
@@ -224,11 +224,21 @@ final class DesktopTests: XCTestCase {
         let absent = Expected(target: Selector(role: nil, name: nil, text: "404", nativeID: nil), timeout: 2)
         let result = try await desktop.waitForAbsent(absent) as? [String: Any]
         XCTAssertEqual(result?["absent"] as? Bool, true)
-        XCTAssertTrue(try String(contentsOf: log, encoding: .utf8).contains("--timeout-ms 20000"))
+        let calls = try String(contentsOf: log, encoding: .utf8)
+        XCTAssertTrue(calls.contains("--timeout-ms"), calls)
+        XCTAssertFalse(calls.contains("--timeout-ms 20000"), calls)
     }
     func testTextPredicateDoesNotMatchWindowOnlyBecauseAChildMatches() {
         let matches: [[String: Any]] = [["role": "window", "name": "Example"], ["role": "statictext", "name": "Welcome", "value": "Welcome"]]
         let target = Selector(role: nil, name: nil, text: "Welcome", nativeID: nil)
         XCTAssertEqual(Desktop.directMatches(matches, target: target).count, 1)
+    }
+    func testNameStaysExactWhenCombinedWithText() {
+        let matches: [[String: Any]] = [["role": "button", "name": "Save Draft", "value": "Welcome"],
+                                        ["role": "button", "name": "Save", "value": "Welcome"]]
+        let target = Selector(role: "button", name: "Save", text: "Welcome", nativeID: nil)
+        let result = Desktop.directMatches(matches, target: target)
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result.first?["name"] as? String, "Save")
     }
 }
