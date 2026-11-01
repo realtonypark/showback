@@ -1,0 +1,49 @@
+Sources/ShowbackCore/Speech.swift
+  s_d04a6a7c166416::t_38836a72c722e4 1,3-11,60
+  s_d04a6a7c166416::t_cf05bf925f5aa8 2,12-59
+Sources/ShowbackCore/Resources/assets.json
+  s_d04a6a7c166416::t_2977f3955c752b 1-19
+Sources/ShowbackCore/Resources/speech.yaml
+  s_d04a6a7c166416::t_47affa535f5e27 1-95
+Sources/ShowbackCore/Paths.swift
+  s_d04a6a7c166416::t_cf05bf925f5aa8 1-22
+Sources/ShowbackCore/Assets.swift
+  s_d04a6a7c166416::t_2977f3955c752b 1,3-6,143
+  s_d04a6a7c166416::t_2ba76cb5416937 2,7-104,106-142,144-146
+  s_d04a6a7c166416::t_38836a72c722e4 105
+Tests/ShowbackCoreTests/SpeechTests.swift
+  s_d04a6a7c166416::t_38836a72c722e4 1-25
+Sources/ShowbackCore/CLI.swift
+  s_d04a6a7c166416::t_aaad7bc2eb3784 23
+  s_d04a6a7c166416::t_86768075d46723 1-22,24-40
+Sources/ShowbackCore/Resources/THIRD-PARTY.md
+  s_d04a6a7c166416::t_218fc4e25d6c12 1-11
+Sources/ShowbackCore/Resources/LICENSE-Apache-2.0.txt
+  s_d04a6a7c166416::t_edc69d36d56c3b 1-202
+Package.swift
+  s_d04a6a7c166416::t_2977f3955c752b 9
+Sources/ShowbackCore/Resources/LICENSE-Pocket-MIT.txt
+  s_d04a6a7c166416::t_edc69d36d56c3b 1-23
+Sources/ShowbackCore/SettingsStore.swift
+  s_d04a6a7c166416::t_cf05bf925f5aa8 1-21
+Tests/ShowbackCoreTests/AssetsTests.swift
+  s_d04a6a7c166416::t_2977f3955c752b 1-18
+Sources/Showback/main.swift
+  s_d04a6a7c166416::t_86768075d46723 2-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "35ef702d5e22b1fe11657edd784db8638e78514a",
+  "prompts": {},
+  "sessions": {
+    "s_d04a6a7c166416": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19598-40dc-7f81-9484-3ecd9608fde4",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
