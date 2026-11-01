@@ -1,0 +1,24 @@
+Sources/ShowbackCore/Desktop.swift
+  h_05e5164a29872e 144-145,199-201
+Sources/ShowbackCore/Script.swift
+  h_05e5164a29872e 103-104,107-108,115-119
+Tests/ShowbackCoreTests/DesktopTests.swift
+  h_05e5164a29872e 96-151
+Tests/ShowbackCoreTests/ScriptTests.swift
+  h_05e5164a29872e 33-43
+docs/scripts.md
+  h_05e5164a29872e 8
+skills/showback/SKILL.md
+  h_05e5164a29872e 49-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6bc9ee2f4a8e5953e1aa4c092fc9b1c41425376d",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
