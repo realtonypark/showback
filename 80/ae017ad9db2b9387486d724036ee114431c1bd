@@ -1,0 +1,23 @@
+Sources/ShowbackCore/Assets.swift
+  s_d04a6a7c166416::t_2c5f6e3396df07 39,67-68,102-103,105,107,111,137-140,143-144
+Sources/ShowbackCore/Resources/assets.json
+  s_d04a6a7c166416::t_2c5f6e3396df07 14-17
+scripts/check-asset-integrity.py
+  s_d04a6a7c166416::t_0afc442d3d7d8d 1-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "80ae017ad9db2b9387486d724036ee114431c1bd",
+  "prompts": {},
+  "sessions": {
+    "s_d04a6a7c166416": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19598-40dc-7f81-9484-3ecd9608fde4",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
