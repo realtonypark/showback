@@ -141,6 +141,8 @@ public final class Desktop {
         case .select(let target, let option): selector = target; command = "select"; suffix = [option]
         case .scroll(let target, let direction, let amount):
             selector = target; command = "scroll"; suffix = ["--direction", direction, "--amount", String(amount)]
+        case .setValue(let target, let text): selector = target; command = "set-value"; suffix = [text]
+        case .verb(let name, let target): selector = target; command = name
         }
         let matches = try await find(selector)
         guard matches.count == 1, let match = matches.first else {
@@ -194,7 +196,9 @@ public final class Desktop {
 
     private func find(_ target: Selector) async throws -> [[String: Any]] {
         // ponytail: dense web trees exhaust the 5s default; 20s stays inside the 35s command bound.
-        var args = ["find", "--app", app, "--window-id", try selected().id, "--exact", "--limit", "0", "--timeout-ms", "20000"]
+        // Text targets match by substring (see directMatches), so --exact applies only without text.
+        var args = ["find", "--app", app, "--window-id", try selected().id, "--limit", "0", "--timeout-ms", "20000"]
+        if target.text == nil { args.append("--exact") }
         for (flag, value) in [("--role", target.role), ("--name", target.name), ("--text", target.text), ("--native-id", target.nativeID)] {
             if let value { args += [flag, value] }
         }

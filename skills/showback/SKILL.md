@@ -46,6 +46,9 @@ Actions:
 - `{"press": "cmd+a"}` sends a key combination to the selected window.
 - `{"scroll": {"target": SELECTOR, "direction": "down", "amount": 3}}` scrolls a target.
 - `{"wait": {"text": "Saved", "timeout": 10}}` waits for a UI condition. A scene-level `expect` has the same condition format.
+- `{"set-value": {"target": SELECTOR, "text": "Demo note"}}` sets a field value directly. `{"clear": SELECTOR}`, `{"focus": SELECTOR}`, `{"check": SELECTOR}`, `{"uncheck": SELECTOR}`, `{"toggle": SELECTOR}`, `{"expand": SELECTOR}`, `{"collapse": SELECTOR}`, and `{"scroll-to": SELECTOR}` run the matching agent-desktop control on one unique target.
+
+The agent chooses what output to present and which app shows it: a fixed page in the browser, a file in Finder or an editor, a diff, a log in a terminal, or a native view. Drive that app with these controls, then `point` at the result and check it with `expect` plus `absent`. Showback provides control, checked presentation, narration, and recording; the choice of surface and content stays with the agent.
 
 Use one action key per action. Selectors combine `role`, `name`, `text`, and `nativeID`. Conditions use those fields plus a timeout in seconds (default 15, maximum 300). Action targets must resolve uniquely; `expect` passes when a direct match exists, `absent` passes when no direct match exists. To prove a fix, check both: `expect` the intended state and set `absent` to the old error, for example `"absent": {"text": "404"}`. Window selection waits up to 15 seconds for a single window to appear; ambiguous windows still stop the run. Scripts have no shell commands, loops, guessed coordinate fallback, or autonomous recovery.
 

@@ -100,15 +100,23 @@ public enum Action {
     case press(String)
     case scroll(Selector, String, Int)
     case wait(Expected)
+    case setValue(Selector, String)
+    case verb(String, Selector)
 
     static func parse(_ value: Any) throws -> Action {
-        let fields = try Fields(value, keys: ["point", "click", "type", "select", "press", "scroll", "wait"])
+        let fields = try Fields(value, keys: ["point", "click", "type", "select", "press", "scroll", "wait",
+                                              "set-value", "clear", "focus", "check", "uncheck", "toggle", "expand", "collapse", "scroll-to"])
         guard fields.values.count == 1, let (key, value) = fields.values.first else { throw Failure("An action must contain exactly one command.") }
         switch key {
         case "point": return try .point(Selector.parse(value))
         case "click": return try .click(Selector.parse(value))
         case "press": return try .press(fields.string("press", max: 128))
         case "wait": return try .wait(Expected.parse(value))
+        case "set-value":
+            let input = try Fields(value, keys: ["target", "text"])
+            return try .setValue(Selector.parse(input.required("target")), input.string("text", max: 10_000))
+        case "clear", "focus", "check", "uncheck", "toggle", "expand", "collapse", "scroll-to":
+            return try .verb(key, Selector.parse(value))
         case "type":
             let input = try Fields(value, keys: ["target", "text"])
             return try .type(Selector.parse(input.required("target")), input.string("text", max: 10_000))

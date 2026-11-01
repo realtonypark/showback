@@ -93,6 +93,62 @@ final class DesktopTests: XCTestCase {
         try await desktop.select(app: "Example", title: "Account")
         XCTAssertEqual(desktop.window?.id, "w-1")
     }
+    func testExecuteMapsGeneralVerbsToDesktopCommands() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let log = root.appendingPathComponent("calls")
+        let binary = root.appendingPathComponent("desktop")
+        let windows = String(decoding: try JSONSerialization.data(withJSONObject: ["ok": true, "data": [first]]), as: UTF8.self)
+        let script = """
+        #!/bin/sh
+        if [ "$1" = --session ]; then shift 2; fi
+        printf '%s\\n' "$*" >> '\(log.path)'
+        case "$1 $2" in
+          list-windows*) printf '%s' '\(windows)' ;;
+          find*) printf '%s' '{"ok":true,"data":{"matches":[{"ref_id":"@s1:e1"}]}}' ;;
+          get*) printf '%s' '{"ok":true,"data":{"value":{"x":0.0,"y":0.0,"width":10.0,"height":10.0}}}' ;;
+          *) printf '%s' '{"ok":true,"data":{}}' ;;
+        esac
+        """
+        try script.write(to: binary, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binary.path)
+        let desktop = Desktop(binary: binary, app: "Example", title: "Account", sessionFile: root.appendingPathComponent("s.json"))
+        try await desktop.select(app: "Example", title: "Account")
+        let field = Selector(role: "textfield", name: "Note", text: nil, nativeID: nil)
+        _ = try await desktop.execute(.setValue(field, "hello")) { _ in }
+        _ = try await desktop.execute(.verb("scroll-to", field)) { _ in }
+        let calls = try String(contentsOf: log, encoding: .utf8)
+        XCTAssertTrue(calls.contains("set-value @s1:e1 hello"), calls)
+        XCTAssertTrue(calls.contains("scroll-to @s1:e1"), calls)
+    }
+    func testTextTargetsMatchBySubstringNotExact() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let log = root.appendingPathComponent("calls")
+        let binary = root.appendingPathComponent("desktop")
+        let windows = String(decoding: try JSONSerialization.data(withJSONObject: ["ok": true, "data": [first]]), as: UTF8.self)
+        let script = """
+        #!/bin/sh
+        if [ "$1" = --session ]; then shift 2; fi
+        printf '%s\\n' "$*" >> '\(log.path)'
+        case "$1 $2" in
+          list-windows*) printf '%s' '\(windows)' ;;
+          find*) printf '%s' '{"ok":true,"data":{"matches":[{"role":"textfield","value":"Fixed output: the intended page loads."}]}}' ;;
+          *) printf '%s' '{"ok":true,"data":{}}' ;;
+        esac
+        """
+        try script.write(to: binary, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binary.path)
+        let desktop = Desktop(binary: binary, app: "Example", title: "Account", sessionFile: root.appendingPathComponent("s.json"))
+        try await desktop.select(app: "Example", title: "Account")
+        let expected = Expected(target: Selector(role: nil, name: nil, text: "intended page loads", nativeID: nil), timeout: 2)
+        _ = try await desktop.waitFor(expected)
+        let calls = try String(contentsOf: log, encoding: .utf8)
+        XCTAssertTrue(calls.contains("--text intended page loads"), calls)
+        XCTAssertFalse(calls.contains("--exact"), calls)
+    }
     func testFocusRetriesTransientFocusLoss() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

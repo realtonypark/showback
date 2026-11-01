@@ -30,6 +30,17 @@ final class ScriptTests: XCTestCase {
         XCTAssertThrowsError(try DemoScript.parse(data))
     }
 
+    func testAcceptsGeneralControlVerbsForAgentChosenPresentation() {
+        for action in [#"{"set-value":{"target":{"role":"textfield","name":"Note"},"text":"hello"}}"#,
+                       #"{"clear":{"role":"textfield","name":"Note"}}"#, #"{"focus":{"role":"button","name":"Home"}}"#,
+                       #"{"check":{"role":"checkbox","name":"Done"}}"#, #"{"uncheck":{"role":"checkbox","name":"Done"}}"#,
+                       #"{"toggle":{"role":"checkbox","name":"Done"}}"#, #"{"expand":{"role":"disclosure","name":"More"}}"#,
+                       #"{"collapse":{"role":"disclosure","name":"More"}}"#, #"{"scroll-to":{"role":"button","name":"Save"}}"#] {
+            let data = Data("{\"version\":1,\"title\":\"Present\",\"app\":\"Fixture\",\"scenes\":[{\"actions\":[\(action)]}]}".utf8)
+            XCTAssertNoThrow(try DemoScript.parse(data), action)
+        }
+    }
+
     func testRejectsUnknownAction() {
         let data = Data(#"{"version":1,"title":"Login","app":"Fixture","scenes":[{"actions":[{"shell":"echo success"}]}]}"#.utf8)
         XCTAssertThrowsError(try DemoScript.parse(data))
