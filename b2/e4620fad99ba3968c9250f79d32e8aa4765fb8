@@ -1,0 +1,30 @@
+docs/verification.md
+  s_d04a6a7c166416::t_79b05c1016ed01 42,52-58
+  s_d04a6a7c166416::t_73ff3b4387e8c2 25
+docs/installation.md
+  s_d04a6a7c166416::t_79b05c1016ed01 3
+examples/showback-demo.json
+  s_d04a6a7c166416::t_79b05c1016ed01 5-7,11-22,25-37,40-41
+Sources/ShowbackCore/Resources/THIRD-PARTY.md
+  s_d04a6a7c166416::t_79b05c1016ed01 7
+docs/research/2026-11-01-foundations.md
+  s_d04a6a7c166416::t_79b05c1016ed01 3,16,34,78,90,94,98
+docs/plans/2026-11-01-showback-design.md
+  s_d04a6a7c166416::t_79b05c1016ed01 132,136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b2e4620fad99ba3968c9250f79d32e8aa4765fb8",
+  "prompts": {},
+  "sessions": {
+    "s_d04a6a7c166416": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19598-40dc-7f81-9484-3ecd9608fde4",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
