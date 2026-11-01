@@ -44,7 +44,7 @@ public enum Command {
                             readers.enter()
                             DispatchQueue.global(qos: .userInitiated).async {
                                 defer { readers.leave() }
-                                Self.drain(pipe, into: file, process: process, state: state, limit: outputLimit)
+                                Self.drain(pipe, into: file, isRunning: { process.isRunning }, limit: outputLimit, onFailure: state.stop)
                             }
                         }
                         let deadline = DispatchWorkItem { state.stop("Command timed out after \(timeout) seconds.") }
@@ -66,29 +66,30 @@ public enum Command {
         }, onCancel: { state.stop("Command cancelled.") })
     }
 
-    private static func drain(_ pipe: Pipe, into file: FileHandle, process: Process, state: CommandState, limit: Int) {
+    static func drain(_ pipe: Pipe, into file: FileHandle, isRunning: () -> Bool, limit: Int, onFailure: (String) -> Void) {
         let input = pipe.fileHandleForReading
         defer { try? input.close() }
         let descriptor = input.fileDescriptor
         guard fcntl(descriptor, F_SETFL, fcntl(descriptor, F_GETFL) | O_NONBLOCK) == 0 else {
-            state.stop("Cannot read command output."); return
+            onFailure("Cannot read command output."); return
         }
         var buffer = [UInt8](repeating: 0, count: 65_536)
         var total = 0
         while true {
+            let wasRunning = isRunning()
             let count = read(descriptor, &buffer, buffer.count)
             if count > 0 {
-                guard count <= limit - total else { state.stop("Command output exceeds \(limit) bytes."); return }
+                guard count <= limit - total else { onFailure("Command output exceeds \(limit) bytes."); return }
                 do { try file.write(contentsOf: Data(buffer.prefix(count))) }
-                catch { state.stop("Cannot save command output: \(error.localizedDescription)"); return }
+                catch { onFailure("Cannot save command output: \(error.localizedDescription)"); return }
                 total += count
             } else if count == 0 { return }
             else if errno == EINTR { continue }
             else if errno == EAGAIN {
-                // A descendant can retain the pipe after the direct child exits.
-                guard process.isRunning else { return }
+                // Drain once after known exit before abandoning a pipe retained by descendants.
+                guard wasRunning else { return }
                 usleep(10_000)
-            } else { state.stop("Cannot read command output."); return }
+            } else { onFailure("Cannot read command output."); return }
         }
     }
 

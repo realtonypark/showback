@@ -45,6 +45,37 @@ final class ProcessTests: XCTestCase {
             if mode == "file" { XCTAssertLessThanOrEqual(try file.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0, 16_777_216) }
         }
     }
+    func testExitObservedAfterEmptyReadDoesNotDiscardFinalBytes() throws {
+        let pipe = Pipe()
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: url); try? pipe.fileHandleForWriting.close() }
+        try Data().write(to: url)
+        let file = try FileHandle(forWritingTo: url)
+        defer { try? file.close() }
+        let final = Data("last bytes before exit".utf8)
+        var exited = false
+        var failures: [String] = []
+        Command.drain(pipe, into: file, isRunning: {
+            if !exited {
+                try! pipe.fileHandleForWriting.write(contentsOf: final)
+                exited = true
+            }
+            return false
+        }, limit: 100, onFailure: { failures.append($0) })
+        XCTAssertEqual(try Data(contentsOf: url), final)
+        XCTAssertTrue(failures.isEmpty)
+    }
+
+    func testDescendantHoldingPipeDoesNotDelayDirectChildOutput() async throws {
+        let result = try await Command.run(URL(fileURLWithPath: "/bin/sh"),
+            ["-c", "sleep 10 & printf '%s' \"$!\" >&2; printf final; exit 0"], timeout: 2)
+        let descendant = try XCTUnwrap(Int32(result.stderr))
+        defer { kill(descendant, SIGTERM) }
+        XCTAssertEqual(result.status, 0)
+        XCTAssertEqual(result.stdout, "final")
+        XCTAssertEqual(kill(descendant, 0), 0, "Command must return while the descendant still holds its pipes")
+    }
+
     func testTerminatesTimedOutCommand() async {
         do {
             _ = try await Command.run(URL(fileURLWithPath: "/bin/sleep"), ["20"], timeout: 0.1)
