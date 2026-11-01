@@ -129,8 +129,8 @@ Keep an incomplete or failed export explicitly marked. An unfinalized video must
 5. Validate a controlled browser demo and a native-app demo. Inspect video frames, audio, screenshots, and structured results. Check cursor/highlight inclusion, measured synchronization, truncated audio, static-screen recording, target movement, expected-state failure, and cancellation. Use an agreed synchronization tolerance and record measured results before claiming it passes.
 6. Re-run the installed command offline after asset installation, without provider credentials. Verify failed runs cannot produce successful result status.
 
-Commit in small, reviewable steps on local `main`. Check each step before committing and keep the working tree clean. Use a controlled test app and safe test data. Do not play test audio through speakers or record unrelated desktop content during validation. Preserve the human's current app state where the test does not explicitly need to change it.
+Commit in small, reviewable steps. Initial implementation used local `main`; PR review fixes land on `showback/initial-implementation`. Check each step before committing and keep the working tree clean. Use a controlled test app and safe test data. Do not play test audio through speakers or record unrelated desktop content during validation. Preserve the human's current app state where the test does not explicitly need to change it.
 
 ## Outstanding implementation evidence
 
-The model, runtime, architecture support, minimum OS, capture/filter strategy, complete install size, setup time, and synchronization tolerance still need measurements. These are verification work, not established behavior. The user approved implementation and iterative build/test/fix verification.
+The implementation evidence and remaining platform limits are now recorded in `docs/verification.md`, including model/runtime selection, capture strategy, install size, and measured synchronization. Clean-machine setup time and Intel/macOS 15 hardware coverage remain unverified. The user approved implementation and iterative build/test/fix verification.

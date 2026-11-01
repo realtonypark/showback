@@ -1,6 +1,6 @@
 # Showback foundations
 
-Initial research and accepted constraints from the design interview. Implementation has not started.
+Historical research and accepted constraints from the design interview. Implementation and validation are now present; see [verification](../verification.md) for current evidence and platform limits.
 
 ## User intent
 
@@ -13,7 +13,7 @@ Initial research and accepted constraints from the design interview. Implementat
 
 ## Verified local state
 
-- At initial inspection, `/Users/tpark/exp/showback` was an empty Git repository on `main`. Research and glossary are now committed there; implementation has not started.
+- At initial inspection, `/Users/tpark/exp/showback` was an empty Git repository on `main`. That initial state is historical; implementation, installation, and validation are now committed.
 - The installed agent-desktop npm package reports version 1.0.2; its JSON protocol reports version 2.5.
 - `agent-desktop status` reports macOS with Accessibility and Screen Recording granted. Automation permission is unknown.
 - Swift, macOS `say`, and FFmpeg are installed. Their presence does not establish recording or speech quality.
@@ -31,7 +31,7 @@ Sources: `/Users/tpark/.agents/skills/agent-desktop/SKILL.md`, installed CLI hel
 - Waits support UI conditions. They can replace fixed sleeps for application readiness; deliberate viewing time is a separate concern.
 - Sessions provide traces and optional pre/post screenshots. Those artifacts are not a continuous video recording.
 - Action results distinguish delivery from verified effect. Do not blindly retry actions that might already have landed.
-- Overlay inclusion in a chosen capture mode, cursor timing, and audio synchronization still require runtime checks.
+- Overlay inclusion, cursor timing, and audio synchronization required runtime checks during this research; measured results are now in [verification](../verification.md).
 
 The [official repository](https://github.com/vercel-labs/agent-desktop) confirms the accessibility-based CLI and observe-act-observe workflow. Local version-matched docs are the authority for the installed behavior.
 
@@ -75,7 +75,7 @@ Scrawl is MIT licensed, copyright Kit Langton. Preserve its license notice if co
 - The official [HeyGen model page](https://openrouter.ai/heygen/heygen-voice-1-turbo:free) confirms retirement on November 30, 2026. Do not make this the sole basis of Showback Cloud.
 - Neither exact ID appeared in the unauthenticated `https://openrouter.ai/api/v1/models` response during this check, despite both official model pages being present. Model-page presence alone does not verify API usability. Confirm the current speech-specific discovery and request contract before choosing a default.
 - The screenshots are model-picker interaction references. For example, [Parakeet](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2) is a speech-recognition model; it does not generate narration. Select actual speech-synthesis models for local output.
-- A credential was supplied in chat. Its value is intentionally absent from all project files and tool calls. No authenticated requests were made. The local-only design needs no provider credentials or cloud relay.
+- A credential was supplied in chat. Its value is intentionally absent from all project files and tool calls. No authenticated requests were made. The local-only design needs no provider credentials or cloud relay. Rotate or revoke the provider key supplied in chat; removing cloud support does not invalidate an exposed credential.
 
 ## Local synthesis candidates
 
@@ -87,12 +87,12 @@ Read-only source research identifies [Pocket TTS](https://github.com/kyutai-labs
 
 [Apple speech synthesis](https://developer.apple.com/documentation/avfaudio/avspeechsynthesizer) can provide a small system-voice baseline. Its [audio-buffer output](https://developer.apple.com/documentation/avfaudio/avspeechsynthesizer/write(_:tobuffercallback:)) avoids recording narration through the microphone. Available voices vary by machine.
 
-No candidate has been downloaded or executed. Compatibility, download size of the complete distribution, offline behavior, narration quality, and latency require validation before selecting a default model.
+At the time of this research, no candidate had been downloaded or executed. Subsequent validation selected Pocket TTS English 18M; complete installed/download sizes, offline behavior, quality checks, and timing evidence are recorded in [verification](../verification.md).
 
 ## Proposed implementation choices
 
-The complete proposed design is in `docs/plans/2026-11-01-showback-design.md`. The model/runtime selection and the recording path require bounded implementation checks rather than more preference questions. Validate local TTS and window-plus-overlay capture before committing to those technical choices. The user still needs to confirm shared understanding of the complete design before implementation, as required by the requested grilling skill.
+The complete proposed design is in `docs/plans/2026-11-01-showback-design.md`. The model/runtime selection and the recording path require bounded implementation checks rather than more preference questions. Validate local TTS and window-plus-overlay capture before committing to those technical choices. The user subsequently approved that design and the build/test/fix loop.
 
 ## Checks still needed
 
-No GUI actions, recording, speaker playback, speech-quality comparison, or runtime synchronization checks were performed. A narrated success claim is not evidence that the application reached the expected state; the design must distinguish the script's intent from observed results.
+No GUI actions, recording, speaker playback, speech-quality comparison, or runtime synchronization checks were performed during this initial research. Later implementation checks are recorded in [verification](../verification.md); speaker playback remains intentionally excluded. A narrated success claim is not evidence that the application reached the expected state; the design must distinguish the script's intent from observed results.

@@ -1,6 +1,6 @@
 # Installation
 
-`scripts/install.sh` owns app/CLI/skill activation. `Sources/ShowbackCore/Assets.swift` owns verified downloads and the installed asset receipt. `Resources/assets.json` is the source of asset versions, sizes, hashes, paths, and voices. `Resources/version.txt` owns the app version; `Package.swift` owns the minimum macOS version.
+`scripts/install.sh` owns app/CLI/skill activation. `Sources/ShowbackCore/Assets.swift` owns verified downloads and the installed asset receipt. `Sources/ShowbackCore/Resources/assets.json` is the source of asset versions, sizes, hashes, paths, and voices. `Sources/ShowbackCore/Resources/version.txt` owns the app version; `Package.swift` owns the minimum macOS version.
 
 - Stage the complete installation before replacing a working app. Install the model and runtimes in the same operation as the CLI and skill.
 - Verify cached and downloaded bytes against pinned SHA-256 identities. Never treat a partial/corrupt download as installed.

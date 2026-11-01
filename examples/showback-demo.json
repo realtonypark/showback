@@ -2,24 +2,42 @@
   "version": 1,
   "title": "Showback demonstrates its own Settings",
   "app": "Showback",
-  "window": { "title": "Showback Settings" },
+  "window": {
+    "title": "Showback Settings"
+  },
   "scenes": [
     {
       "say": "This is Showback. The English speech model is installed locally, alongside the command-line tool and agent skill.",
-      "actions": [{ "point": { "role": "statictext", "text": "Pocket TTS English 18M" } }],
-      "expect": { "role": "statictext", "text": "Pocket TTS English 18M" }
+      "actions": [
+        {
+          "point": {
+            "role": "statictext",
+            "text": "Pocket TTS English 18M"
+          }
+        }
+      ],
+      "expect": {
+        "role": "statictext",
+        "text": "Pocket TTS English 18M"
+      }
     },
     {
-      "say": "I'll choose Marius for future demonstrations.",
-      "actions": [{ "select": { "target": { "role": "combobox", "name": "Voice" }, "option": "Marius" } }],
-      "expect": { "role": "combobox", "text": "Marius" }
+      "say": "This picker controls the voice used for future demonstrations. I can inspect it without changing your saved choice.",
+      "actions": [
+        {
+          "point": {
+            "role": "combobox",
+            "name": "Voice"
+          }
+        }
+      ],
+      "expect": {
+        "role": "combobox",
+        "name": "Voice"
+      }
     },
-    { "say": "Marius is selected. The setting changed, and Showback checked the visible result before this explanation." },
     {
-      "say": "I'll restore Alba as the default.",
-      "actions": [{ "select": { "target": { "role": "combobox", "name": "Voice" }, "option": "Alba" } }],
-      "expect": { "role": "combobox", "text": "Alba" }
-    },
-    { "say": "Alba is selected again. This walkthrough is being saved as an MP4 with narration, screenshots, and the checks that passed." }
+      "say": "The voice picker is available. This walkthrough is being saved as an MP4 with narration, screenshots, and the checks that passed."
+    }
   ]
 }

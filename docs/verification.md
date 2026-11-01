@@ -22,6 +22,7 @@ Core implementation checks are complete. This is an evidence log, not a claim th
 - The compact model generated 7.08 seconds of test speech in 0.83 seconds total; standard English generated 6.68 seconds in 1.82 seconds. This is a single local measurement, not a benchmark claim.
 - On-device transcription recovered the complete native exported narration through its final sentence. The compact model's first short synthesis check preserved the intended UI instructions; the standard model did not improve that check.
 - The installed self-demo `~/Movies/Showback/showback-demo-final.showback` completed with outbound IP networking denied. Its three expected-state checks passed. The H.264/AAC export contains the complete narration, independently transcribed from the MP4; all narration used muted audio-device playback.
+- Alba also received an explicit preset check during PR review: `.local/assets/bin/pocket-tts generate --config .local/voices.yaml --voice "$PWD/.local/assets/speech/voices/alba.safetensors" --text "The account page is open. The welcome message appeared, and the check passed." --output-path "$PWD/.local/review-alba.wav"`. On-device file transcription (`.local/speech/check .local/review-alba.wav`, logged in `.local/review-alba-transcript.txt`) recovered that complete sentence. No speaker playback was used.
 - Marius and Javert each synthesized the account/welcome/check sentence locally; on-device transcription recovered the complete sentence for both voices.
 - The native Stop button was pressed through the public Accessibility API. The run stopped with cancelled status and retained a playable partial MP4. agent-desktop's window inventory omits status-bar-level panels, so the control check uses `Tests/Fixtures/ClickStop.swift`.
 - A fresh whole-project review found one cleanup defect. A regression first proved that a failed metadata write left its desktop session open; after the fix, the same failure finalized the source video and ended the session. All 29 Swift checks remained green.
@@ -38,7 +39,7 @@ The build targets macOS 15+. Intel runtime assets require AVX2; Intel and macOS 
 
 ## Reproduce controlled GUI checks
 
-Build the fixtures with `./scripts/build-fixtures.sh`. The virtual-display helper is development-only and adapted from Scrawl under its MIT license. It uses a private macOS API; it is not part of Showback.
+From the repository root, build the CLI with `swift build -j 3` and the fixtures with `./scripts/build-fixtures.sh`. Set `SHOWBACK_ASSETS` below to an existing verified asset directory; for a default installation, use `~/Applications/Showback.app/Contents/Resources/Assets` instead of `.local/assets`. The virtual-display helper is development-only and adapted from Scrawl under its MIT license. It uses a private macOS API; it is not part of Showback.
 
 ```sh
 mkdir /tmp/pro-gui.lock # stop if another task owns it
@@ -48,9 +49,13 @@ mkdir /tmp/pro-gui.lock # stop if another task owns it
 Keep that process running. Use its printed display ID below, never the physical display. The session must be unlocked. `SHOWBACK_TEST_DISPLAY` selects the virtual display for `check-settings.py`. In a separate terminal:
 
 ```sh
-open -n '.local/gui/Showback Fixture.app' --args --display DISPLAY_ID --events /absolute/showback/.local/ui-transition.txt
-open -n '.local/gui/Showback Browser Fixture.app' --args --display DISPLAY_ID --page /absolute/showback/Tests/Fixtures/browser.html
-export SHOWBACK_ASSETS=/absolute/showback/.local/assets
+export SHOWBACK_TEST_DISPLAY=DISPLAY_ID # replace with the helper's printed virtual display ID
+export SHOWBACK_FIXTURE_EVENTS="$PWD/.local/ui-transition.txt"
+export SHOWBACK_ASSETS="$PWD/.local/assets"
+open -n '.local/gui/Showback Fixture.app' --args --display "$SHOWBACK_TEST_DISPLAY" --events "$SHOWBACK_FIXTURE_EVENTS"
+open -n '.local/gui/Showback Browser Fixture.app' --args --display "$SHOWBACK_TEST_DISPLAY" --page "$PWD/Tests/Fixtures/browser.html"
+python3 scripts/check-settings.py
+python3 scripts/check-visual.py .build/debug/showback "$PWD/.local/repro-visual-$(date +%s).showback"
 python3 scripts/check-runs.py
 ```
 
