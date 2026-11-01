@@ -1,0 +1,21 @@
+scripts/check-persistence.py
+  s_d04a6a7c166416::t_0284cd6bb93c55 1-50
+Sources/ShowbackCore/Runner.swift
+  s_d04a6a7c166416::t_ff443ee8ae5088 122-126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6414a13a6d1823d83551f6b9d1d41a2405e0d408",
+  "prompts": {},
+  "sessions": {
+    "s_d04a6a7c166416": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19598-40dc-7f81-9484-3ecd9608fde4",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
