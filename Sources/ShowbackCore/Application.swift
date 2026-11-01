@@ -27,6 +27,7 @@ import AppKit
     var settings: SettingsWindow?
     var task: Task<Void, Never>?
     var signals: [DispatchSourceSignal] = []
+    var stopSignals: UInt = 0
     init(assets: Assets?, options: RunOptions?, arguments: [String], isSettings: Bool) {
         self.assets = assets; self.options = options; self.arguments = arguments; self.isSettings = isSettings
     }
@@ -49,7 +50,12 @@ import AppKit
         for sig in [SIGINT, SIGTERM] {
             signal(sig, SIG_IGN)
             let source = DispatchSource.makeSignalSource(signal: sig, queue: .main)
-            source.setEventHandler { [weak self] in self?.task?.cancel() }
+            source.setEventHandler { [weak self, weak source] in
+                guard let self, let source else { return }
+                self.stopSignals += source.data
+                if self.stopSignals >= 2 { _exit(130) }
+                self.task?.cancel()
+            }
             source.resume(); signals.append(source)
         }
         task = Task { @MainActor in
