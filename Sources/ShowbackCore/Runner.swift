@@ -119,7 +119,11 @@ import AppKit
         }
         let pointer = presentation?.timeline ?? PointerTimeline()
         presentation?.close(); stop?.close()
-        try bundle.media(pointer: pointer, narration: segments)
+        do { try bundle.media(pointer: pointer, narration: segments) }
+        catch {
+            status = status == .cancelled ? .cancelled : .failed
+            problem = [problem, error.localizedDescription].compactMap { $0 }.joined(separator: "\n")
+        }
         // Cleanup must finish even when the presentation task was cancelled.
         let cleanup = Task { @MainActor () -> (Bool, String?) in
             var mediaReady = false
