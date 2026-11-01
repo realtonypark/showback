@@ -28,15 +28,18 @@ try:
     window = None
     while time.monotonic() < deadline:
         assert process.poll() is None, ("Settings exited instead of allowing voice repair", process.communicate())
-        result = subprocess.run([desktop, "--session", scope, "list-windows", "--app", "showback"], capture_output=True, text=True, timeout=10)
+        result = subprocess.run([desktop, "--session", scope, "list-windows"], capture_output=True, text=True, timeout=10)
         value = json.loads(result.stdout)
         windows = value.get("data", [])
-        window = next((item for item in windows if item.get("pid") == process.pid and item.get("title") == "Showback Settings"), None)
+        window = next((item for item in windows if item.get("pid") == process.pid and item.get("title") == "Showback Settings" and item.get("accessible")), None)
         if window:
             break
         time.sleep(0.05)
     assert window, "Settings window did not appear"
-    base = ["--app", window["app_name"], "--window-id", window["id"]]
+    display = next(item for item in call("list-displays") if str(item["id"]) == os.environ["SHOWBACK_TEST_DISPLAY"])
+    assert not display["is_primary"], "Settings QA requires a virtual display"
+    call("move-window", "--window-id", window["id"], "--x=" + str(display["bounds"]["x"] + 120), "--y", str(display["bounds"]["y"] + 100))
+    base = ["--window-id", window["id"]]
     sheet = call("find", *base, "--surface", "sheet", "--role", "button", "--name", "OK", "--exact")
     assert len(sheet["matches"]) == 1, sheet
     call("click", sheet["matches"][0]["ref_id"])

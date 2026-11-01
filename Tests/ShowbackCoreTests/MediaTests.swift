@@ -32,7 +32,7 @@ final class MediaTests: XCTestCase {
         for i in 0..<24000 { buffer.floatChannelData![0][i] = sin(Float(i) * 0.1) * 0.2 }
         do { let file = try AVAudioFile(forWriting: audio, settings: format.settings); try file.write(from: buffer) }
         var timeline = PointerTimeline()
-        try timeline.point(at: 0.2, target: Box(x: 80, y: 40, width: 40, height: 20), viewport: Box(x: 0, y: 0, width: 320, height: 180), kind: "point")
+        try timeline.point(at: 0.2, target: Box(x: 80, y: 40, width: 40, height: 20), viewport: Box(x: 0, y: 0, width: 320, height: 180))
         let output = root.appendingPathComponent("demo.mp4")
         try await MediaExport.render(source: movie, output: output, narration: [NarrationSegment(url: audio, start: 0.5, duration: 1)], pointer: timeline)
         let asset = AVURLAsset(url: output)

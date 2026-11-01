@@ -70,7 +70,7 @@ public final class Desktop {
         return window
     }
 
-    public func execute(_ action: Action, willAct: (Box, String) async throws -> Void) async throws -> Any? {
+    public func execute(_ action: Action, willAct: (Box) async throws -> Void) async throws -> Any? {
         var selector: Selector
         var command: String
         var suffix: [String] = []
@@ -95,7 +95,7 @@ public final class Desktop {
             bounds = try Box(result?["value"])
         } else { bounds = try Box(match["bounds"]) }
         guard command == "point" || ref != nil else { throw Failure("The selected element is not actionable.") }
-        try await willAct(bounds, command)
+        try await willAct(bounds)
         try Task.checkCancellation()
         if command == "point" { return ["pointed": true] }
         return try await call([command, ref!] + suffix)

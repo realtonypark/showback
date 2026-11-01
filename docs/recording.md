@@ -9,6 +9,7 @@
 - Display capture excludes Showback's presentation/control app. Create its windows before resolving the content filter.
 - Preserve original video and narration. Advertise `demo.mp4` only after export completes and its duration is validated.
 - An unexpected capture error must stop the presentation. Window resizing ends a window-scoped run rather than producing misaligned annotations.
+- Pointer travel and target outlines share the live/export timeline. Do not infer input delivery time from a desktop command returning; action events record command completion.
 - Source audio is generated narration. Microphone, system audio, camera, music, zoom editing, and uploads are outside this version.
 
 Check `PresentationTests`, `MediaTests`, and real fixture recordings. Inspect video frames and streams. The synchronization target is 100 ms; record measured evidence in `docs/verification.md`.

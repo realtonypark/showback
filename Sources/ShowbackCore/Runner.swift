@@ -76,15 +76,10 @@ import AppKit
                         for action in scene.actions {
                             try Task.checkCancellation()
                             try recording?.check()
-                            var pointed: (Box, Box, String)?
-                            let result = try await desktop.execute(action) { target, kind in
+                            let result = try await desktop.execute(action) { target in
                                 let current = try recording?.viewport() ?? (script.displayID == nil ? Recording.windowBounds(currentWindow.number) : viewport)
-                                pointed = (target, current, kind)
-                                try await presentation?.point(target: target, viewport: current, kind: "point")
+                                try await presentation?.point(target: target, viewport: current)
                                 try bundle.record("point", at: time(), scene: index + 1, data: ["x": target.x, "y": target.y, "width": target.width, "height": target.height])
-                            }
-                            if let (target, current, kind) = pointed, kind == "click" {
-                                try await presentation?.point(target: target, viewport: current, kind: "click")
                             }
                             try bundle.record("action", at: time(), scene: index + 1, data: result)
                         }

@@ -65,14 +65,16 @@ struct CaptureFailure: LocalizedError {
             }
             recording.epoch = recording.state.startTime
             recording.monitor = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak recording] _ in
-                guard let recording, recording.state.problem == nil else { return }
-                do {
-                    if let displayID {
-                        guard CGDisplayIsOnline(displayID) != 0 else { throw CaptureFailure(message: "The captured display disconnected.") }
-                    } else { _ = try recording.viewport() }
-                } catch {
-                    recording.state.fail(error.localizedDescription)
-                    recording.onFailure()
+                MainActor.assumeIsolated {
+                    guard let recording, recording.state.problem == nil else { return }
+                    do {
+                        if let displayID {
+                            guard CGDisplayIsOnline(displayID) != 0 else { throw CaptureFailure(message: "The captured display disconnected.") }
+                        } else { _ = try recording.viewport() }
+                    } catch {
+                        recording.state.fail(error.localizedDescription)
+                        recording.onFailure()
+                    }
                 }
             }
             return recording

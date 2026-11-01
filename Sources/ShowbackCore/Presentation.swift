@@ -5,7 +5,6 @@ public struct PointerFrame {
     let y: Double
     let target: CGRect
     let scale: Double
-    let ripple: Double?
 }
 
 public struct PointerMark: Codable, Sendable {
@@ -14,7 +13,6 @@ public struct PointerMark: Codable, Sendable {
     let fromX: Double
     let fromY: Double
     let unit: Double
-    let kind: String
     let travel: Double
 }
 
@@ -22,7 +20,7 @@ public struct PointerTimeline: Codable, Sendable {
     public private(set) var marks: [PointerMark] = []
     public init() {}
 
-    mutating func point(at time: Double, target: Box, viewport: Box, kind: String, travel: Double = 0.32) throws {
+    mutating func point(at time: Double, target: Box, viewport: Box, travel: Double = 0.32) throws {
         let x = (target.x + target.width / 2 - viewport.x) / viewport.width
         let y = (target.y + target.height / 2 - viewport.y) / viewport.height
         guard [x, y].allSatisfy(\.isFinite), (0...1).contains(x), (0...1).contains(y) else {
@@ -32,7 +30,7 @@ public struct PointerTimeline: Codable, Sendable {
         let box = Box(x: (target.x - viewport.x) / viewport.width, y: (target.y - viewport.y) / viewport.height,
                       width: target.width / viewport.width, height: target.height / viewport.height)
         marks.append(PointerMark(time: time, box: box, fromX: previous?.x ?? 0.5, fromY: previous?.y ?? 0.7,
-                                 unit: 1 / viewport.width, kind: kind, travel: kind == "click" ? 0 : travel))
+                                 unit: 1 / viewport.width, travel: travel))
     }
 
     func frame(at time: Double, width: Double, height: Double) -> PointerFrame? {
@@ -41,11 +39,10 @@ public struct PointerTimeline: Codable, Sendable {
         let eased = progress * progress * (3 - 2 * progress)
         let x = mark.fromX + (mark.box.x + mark.box.width / 2 - mark.fromX) * eased
         let y = mark.fromY + (mark.box.y + mark.box.height / 2 - mark.fromY) * eased
-        let age = time - mark.time
         return PointerFrame(x: x * width, y: y * height,
                             target: CGRect(x: mark.box.x * width, y: mark.box.y * height,
                                            width: mark.box.width * width, height: mark.box.height * height),
-                            scale: width * mark.unit, ripple: mark.kind == "click" && age < 0.6 ? age / 0.6 : nil)
+                            scale: width * mark.unit)
     }
 
     func draw(in context: CGContext, size: CGSize, at time: Double) {
@@ -58,11 +55,6 @@ public struct PointerTimeline: Codable, Sendable {
         let rect = frame.target.insetBy(dx: -4 * frame.scale, dy: -4 * frame.scale)
         context.addPath(CGPath(roundedRect: rect, cornerWidth: 7 * frame.scale, cornerHeight: 7 * frame.scale, transform: nil))
         context.strokePath()
-        if let ripple = frame.ripple {
-            let radius = (8 + 28 * ripple) * frame.scale
-            context.setStrokeColor(CGColor(red: 0.1, green: 0.65, blue: 1, alpha: 1 - ripple))
-            context.strokeEllipse(in: CGRect(x: frame.x - radius, y: frame.y - radius, width: radius * 2, height: radius * 2))
-        }
         context.translateBy(x: frame.x, y: frame.y)
         context.scaleBy(x: frame.scale, y: frame.scale)
         context.move(to: .zero)
@@ -103,16 +95,18 @@ public struct PointerTimeline: Codable, Sendable {
         panel.contentView = view
         panel.orderFrontRegardless()
         timer = Timer.scheduledTimer(withTimeInterval: 1 / 60, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            self.view.time = ProcessInfo.processInfo.systemUptime - self.epoch
-            self.view.needsDisplay = true
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.view.time = ProcessInfo.processInfo.systemUptime - self.epoch
+                self.view.needsDisplay = true
+            }
         }
     }
 
-    func point(target: Box, viewport: Box, kind: String) async throws {
+    func point(target: Box, viewport: Box) async throws {
         panel.setFrame(Self.appKitFrame(viewport), display: true)
-        let travel = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion || kind == "click" ? 0.0 : 0.32
-        try view.timeline.point(at: ProcessInfo.processInfo.systemUptime - epoch, target: target, viewport: viewport, kind: kind, travel: travel)
+        let travel = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0.0 : 0.32
+        try view.timeline.point(at: ProcessInfo.processInfo.systemUptime - epoch, target: target, viewport: viewport, travel: travel)
         if travel > 0 { try await Task.sleep(nanoseconds: UInt64(travel * 1_000_000_000)) }
     }
     func begin(at epoch: Double) { self.epoch = epoch }
