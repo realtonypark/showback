@@ -1,0 +1,64 @@
+Sources/ShowbackCore/Application.swift
+  s_750ce7e392eff7::t_aa26c3004ad65c 5
+scripts/check-walkthrough.py
+  s_750ce7e392eff7::t_1d650f1d58c366 1-74
+docs/desktop.md
+  s_750ce7e392eff7::t_1d650f1d58c366 9
+Tests/ShowbackCoreTests/DesktopTests.swift
+  s_750ce7e392eff7::t_a7305c6d1499b9 152-184
+Sources/ShowbackCore/Script.swift
+  s_750ce7e392eff7::t_05bc208fdb89ca 65,72-75
+  s_750ce7e392eff7::t_a53dbdaeb4ba44 76
+scripts/check-cli.py
+  s_750ce7e392eff7::t_27be1dd1eb4824 18-19
+docs/runs.md
+  s_750ce7e392eff7::t_1d650f1d58c366 10-11
+Tests/ShowbackCoreTests/RunBundleTests.swift
+  s_750ce7e392eff7::t_a7305c6d1499b9 17,22-37
+  s_750ce7e392eff7::t_e55246f000b923 38-39
+Sources/ShowbackCore/Desktop.swift
+  s_750ce7e392eff7::t_05bc208fdb89ca 147-153,163,168-173
+  s_750ce7e392eff7::t_f050ec0f100a65 174-175
+Sources/ShowbackCore/CLI.swift
+  s_750ce7e392eff7::t_05bc208fdb89ca 54
+Sources/ShowbackCore/Presentation.swift
+  s_750ce7e392eff7::t_e3011cdb7e97f1 27
+docs/research/2026-11-02-agent-walkthrough.md
+  s_750ce7e392eff7::t_5da26b20e59038 28-35,42
+  s_750ce7e392eff7::t_9ebd55ec0ef802 1-27,36-41
+docs/scripts.md
+  s_750ce7e392eff7::t_1d650f1d58c366 13-14
+Sources/ShowbackCore/Runner.swift
+  s_750ce7e392eff7::t_05bc208fdb89ca 21,28,31,54-55,73,83-84,95,100,104,118,125,128,161-164
+docs/verification.md
+  s_750ce7e392eff7::t_5da26b20e59038 93-94
+  s_750ce7e392eff7::t_1d650f1d58c366 91-92
+Sources/ShowbackCore/RunBundle.swift
+  s_750ce7e392eff7::t_05bc208fdb89ca 11-13,70,75
+scripts/check-runs.py
+  s_750ce7e392eff7::t_25e5440e498051 44-46
+skills/showback/SKILL.md
+  s_750ce7e392eff7::t_25e5440e498051 34,101
+  s_750ce7e392eff7::t_1441c8fff5e21f 27
+  s_750ce7e392eff7::t_48fa052d335070 22-26,28-33,36-38
+  s_750ce7e392eff7::t_234d7ade5d9684 8,10-12,15,20-21,40-42,61-63,67,70-72,74-76,78,80,83-84,87-99
+  s_750ce7e392eff7::t_4195685cd93163 35
+README.md
+  s_750ce7e392eff7::t_1d650f1d58c366 71-72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "730c28a32cbbbd69db9d4d148bf3dbece5ccd697",
+  "prompts": {},
+  "sessions": {
+    "s_750ce7e392eff7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19deb-65e2-7a91-8c3f-3e38a3d33985",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
