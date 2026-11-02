@@ -14,8 +14,27 @@ final class RunBundleTests: XCTestCase {
             let result = try JSONSerialization.jsonObject(with: Data(contentsOf: bundle.root.appendingPathComponent("run.json"))) as! [String: Any]
             XCTAssertEqual(result["status"] as? String, status.rawValue)
             XCTAssertEqual(result["error"] as? String, "Expected state was not reached")
+            XCTAssertNil(result["video"], "Unfinished media must not be advertised")
             XCTAssertTrue(FileManager.default.fileExists(atPath: bundle.root.appendingPathComponent(".incomplete").path))
             XCTAssertFalse(FileManager.default.fileExists(atPath: bundle.root.appendingPathComponent("demo.mp4").path))
+        }
+    }
+    func testFinalVideoIsExplicitForCompletedAndPartialRuns() throws {
+        let parent = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: parent) }
+        let script = parent.appendingPathComponent("demo.json")
+        try Data("{}".utf8).write(to: script)
+        for status in [RunStatus.completed, .failed, .cancelled] {
+            let bundle = try RunBundle(root: parent.appendingPathComponent("\(status.rawValue).showback"), script: script, title: "Example", recording: true)
+            let video = bundle.root.appendingPathComponent("demo.mp4")
+            try Data("finalized media stand-in".utf8).write(to: video)
+            try bundle.finish(status, error: status == .completed ? nil : "Stopped early", mediaReady: true)
+            let result = try JSONSerialization.jsonObject(with: Data(contentsOf: bundle.root.appendingPathComponent("run.json"))) as! [String: Any]
+            XCTAssertEqual(result["video"] as? String, video.path)
+            let summary = try String(contentsOf: bundle.root.appendingPathComponent("summary.md"), encoding: .utf8)
+            XCTAssertTrue(summary.contains("\(status == .completed ? "Video" : "Partial video"): \(video.path)"))
+            XCTAssertEqual(result["status"] as? String, status.rawValue)
         }
     }
     func testFailedInitializationRemovesOnlyNewBundle() throws {

@@ -149,6 +149,39 @@ final class DesktopTests: XCTestCase {
         XCTAssertTrue(calls.contains("--text intended page loads"), calls)
         XCTAssertFalse(calls.contains("--exact"), calls)
     }
+    func testScrollToRevealsTargetBeforePresentingFreshBounds() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let revealed = root.appendingPathComponent("revealed")
+        let binary = root.appendingPathComponent("desktop")
+        let windows = String(decoding: try JSONSerialization.data(withJSONObject: ["ok": true, "data": [first]]), as: UTF8.self)
+        try """
+        #!/bin/sh
+        case "$1" in
+          list-windows) printf '%s' '\(windows)' ;;
+          find)
+            if [ -f '\(revealed.path)' ]; then ref='@new:e1'; else ref='@old:e1'; fi
+            printf '{"ok":true,"data":{"matches":[{"ref_id":"%s","name":"Next"}]}}' "$ref" ;;
+          scroll-to) [ "$2" = '@old:e1' ] || exit 9; touch '\(revealed.path)'; printf '%s' '{"ok":true,"data":{"scrolled":true}}' ;;
+          get)
+            if [ "$2" = '@new:e1' ]; then y=100; else y=1500; fi
+            printf '{"ok":true,"data":{"value":{"x":0,"y":%s,"width":50,"height":20}}}' "$y" ;;
+        esac
+        """.write(to: binary, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: binary.path)
+        let desktop = Desktop(binary: binary, app: "Example", title: "Account", sessionFile: root.appendingPathComponent("s.json"))
+        try await desktop.select(app: "Example", title: "Account")
+        let target = Selector(role: "button", name: "Next", text: nil, nativeID: nil)
+        var presented: [Box] = []
+        let result = try await desktop.execute(.verb("scroll-to", target)) { bounds in
+            XCTAssertTrue(FileManager.default.fileExists(atPath: revealed.path), "Reveal before pointing")
+            XCTAssertEqual(bounds.y, 100, "Resolve the target again after scrolling")
+            presented.append(bounds)
+        } as? [String: Any]
+        XCTAssertEqual(presented.count, 1)
+        XCTAssertEqual(result?["scrolled"] as? Bool, true)
+    }
     func testFocusRetriesTransientFocusLoss() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

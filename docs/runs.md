@@ -7,6 +7,8 @@
 - Stop on failed checks, unsafe desktop delivery, synthesis failure, capture failure, or cancellation. Do not retry or roll back application actions automatically.
 - Preserve source media and partial results. A failed/cancelled run stays failed/cancelled even when its partial video is usable.
 - A recorded run cannot complete successfully without a finalized MP4. Keep `.incomplete` when media did not finalize.
+- Advertise the finalized `demo.mp4` through the CLI `Video:` line and absolute `run.json.video` path only after export succeeds. Failed/cancelled exports are labeled `Partial video:` and keep their run status. `recording.mp4` is source footage without narration or presentation overlays.
+- Progress identifies each scene. Failure messages identify the active preparation stage, scene/action, or condition; action target errors include the selector.
 - Existing bundles are never overwritten. Cleanup finishes after the first stop signal. A second Ctrl+C or termination signal forces exit and can leave source media unfinalized; the incomplete marker remains. The next run recovers its recorded desktop session before starting another.
 - Save screenshots only for scenes with actions/checks; narration over a static screen does not create another frame.
 

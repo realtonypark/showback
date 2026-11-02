@@ -144,9 +144,13 @@ public final class Desktop {
         case .setValue(let target, let text): selector = target; command = "set-value"; suffix = [text]
         case .verb(let name, let target): selector = target; command = name
         }
-        let matches = try await find(selector)
-        guard matches.count == 1, let match = matches.first else {
-            throw Failure("Expected one \(command) target; found \(matches.count). Narrow the selector.")
+        var match = try await uniqueMatch(selector, command: command)
+        guard command == "point" || match["ref_id"] as? String != nil else { throw Failure("The selected element is not actionable.") }
+        var scrollResult: Any?
+        if command == "scroll-to" {
+            // Reveal first: presenting the old, offscreen bounds would block the scroll itself.
+            scrollResult = try await call([command, match["ref_id"] as! String])
+            match = try await uniqueMatch(selector, command: command)
         }
         let ref = match["ref_id"] as? String
         let bounds: Box
@@ -154,11 +158,19 @@ public final class Desktop {
             let result = try await call(["get", ref, "--property", "bounds"]) as? [String: Any]
             bounds = try Box(result?["value"])
         } else { bounds = try Box(match["bounds"]) }
-        guard command == "point" || ref != nil else { throw Failure("The selected element is not actionable.") }
         try await willAct(bounds)
         try Task.checkCancellation()
+        if command == "scroll-to" { return scrollResult }
         if command == "point" { return ["pointed": true] }
         return try await call([command, ref!] + suffix)
+    }
+
+    private func uniqueMatch(_ target: Selector, command: String) async throws -> [String: Any] {
+        let matches = try await find(target)
+        guard matches.count == 1, let match = matches.first else {
+            throw Failure("Expected one \(command) target (\(target)); found \(matches.count). Narrow the selector using a fresh desktop find.")
+        }
+        return match
     }
 
     @discardableResult public func waitFor(_ expected: Expected) async throws -> Any {

@@ -8,6 +8,9 @@ public final class RunBundle {
     private let recording: Bool
     private var result: [String: Any]
     private var events: [[String: Any]] = []
+    public var video: URL? {
+        (result["video"] as? String).map { URL(fileURLWithPath: $0) }
+    }
 
     public init(root: URL, script: URL, title: String, recording: Bool) throws {
         self.root = root
@@ -64,11 +67,12 @@ public final class RunBundle {
         }
         result["status"] = status.rawValue
         result["mediaReady"] = mediaReady
+        result["video"] = mediaReady ? video.path : nil
         if let error { result["error"] = error }
         try save()
         var summary = "# \(title)\n\nStatus: \(status.rawValue)\n"
         if let error { summary += "\n\(error)\n" }
-        if mediaReady { summary += "\nVideo: \(video.path)\n" }
+        if let video = self.video { summary += "\n\(status == .completed ? "Video" : "Partial video"): \(video.path)\n" }
         summary += "\nRun details: \(root.appendingPathComponent("run.json").path)\n"
         for event in events where ["checked", "absent-checked"].contains(event["kind"] as? String ?? "") {
             let time = String(format: "%.2f", event["time"] as? Double ?? 0)
