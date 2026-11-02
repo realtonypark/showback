@@ -2,6 +2,7 @@ import AppKit
 
 @MainActor public enum Application {
     public static func launch(_ arguments: [String]) throws -> Never {
+        if arguments == ["run", "--help"] || arguments == ["run", "-h"] { print(CLI.help); exit(0) }
         let options: RunOptions?
         let isSettings = arguments.first == "settings" || (arguments.isEmpty && Bundle.main.bundleURL.pathExtension == "app")
         if arguments.first == "run" { options = try RunOptions.parse(Array(arguments.dropFirst())) }

@@ -51,6 +51,7 @@ public enum CLI {
             guard arguments.count == 2 else { throw Failure("Usage: showback validate SCRIPT.json") }
             let script = try DemoScript.load(URL(fileURLWithPath: arguments[1]))
             print("Valid: \(script.title) · \(script.scenes.count) scenes")
+            print("Schema only; application state and targets have not been checked.")
         case "install-assets":
             guard arguments.count == 2, arguments[1].hasPrefix("/") else { throw Failure("Usage: showback install-assets /absolute/staging/Assets") }
             try await Assets(root: URL(fileURLWithPath: arguments[1])).install { print($0); fflush(stdout) }

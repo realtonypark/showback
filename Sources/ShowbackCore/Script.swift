@@ -62,12 +62,17 @@ public struct Scene {
     }
 }
 
-public struct Selector: Equatable {
+public struct Selector: Equatable, CustomStringConvertible {
     let role: String?
     let name: String?
     let text: String?
     let nativeID: String?
     static let keys: Set<String> = ["role", "name", "text", "nativeID"]
+
+    public var description: String {
+        [("role", role), ("name", name), ("text", text), ("nativeID", nativeID)]
+            .compactMap { key, value in value.map { "\(key)=\(String(reflecting: $0))" } }.joined(separator: ", ")
+    }
 
     static func parse(_ fields: Fields) throws -> Selector {
         let selector = try Selector(role: fields.optionalString("role"), name: fields.optionalString("name"),

@@ -86,7 +86,11 @@ python3 scripts/check-runs.py
 
 `check-runs.py` closes the native fixture window at its end. Quit that fixture process and relaunch it before running `check-persistence.py` or `check-visual.py`. Both apps use local test data. The fixtures refuse a missing or primary display. `check-visual.py` also needs Pillow/ffmpeg and `SHOWBACK_FIXTURE_EVENTS` set to the `--events` path; use a fresh output bundle each time. `check-audio-sync.py /absolute/run.showback` needs NumPy, SciPy, and ffmpeg. These are QA tools, not product dependencies.
 
+`SHOWBACK_TEST_DISPLAY=DISPLAY_ID SHOWBACK_ASSETS=/absolute/Assets python3 scripts/check-walkthrough.py` launches and closes its own browser fixture on that virtual display. It checks ambiguous-target diagnostics, an explicit offscreen `scroll-to` followed by a click, checked outcomes, the final-video path in stdout/metadata, and audio/highlight content in that exported MP4. It requires the built browser fixture and ffmpeg/ffprobe; generated files stay in a temporary directory.
+
 Stop the virtual-display process and remove only the lock you created when finished. No test changes real TCC grants or plays narration through speakers.
+
+On November 2, 2026, all 50 Swift tests, release compilation with warnings as errors, CLI checks, the signal self-check, the browser walkthrough regression, and the cancellation/failure harness passed. New regressions first failed on stale offscreen bounds and missing explicit video metadata, then passed after the fixes. A fresh Pi session completed one recorded walkthrough, inspected the exported audio/frames, and delivered `demo.mp4`; see the [agent workflow review](research/2026-11-02-agent-walkthrough.md) for the failed preparation trial, correction, and limits.
 
 ## Requirement audit
 

@@ -10,3 +10,5 @@
 - Do not add shell execution, loops, autonomous repair, or guessed coordinate fallback.
 
 Run `swift test -j 3 --filter ScriptTests` and `showback validate SCRIPT.json` after schema changes. Update callers, skill examples, and README in the same change.
+
+`validate` checks the schema only. Prepare live targets and verify uncertain navigation before a narrated run, then restore the starting state. Accessibility text presence does not establish that a section is visible. Use an explicit `scroll-to` or a tested scroll route before pointing or clicking offscreen content.

@@ -68,6 +68,8 @@ showback run examples/showback-demo.json
 
 This example highlights the installed model and voice picker without changing your saved voice. It saves the narrated video under `~/Movies/Showback/`. Use `--mute` to keep narration in the video without playing it through speakers.
 
+The final `Video:` line names `demo.mp4`, with narration and highlights. Use that file for playback or sharing; `recording.mp4` is raw source footage. Failed or cancelled runs label their finalized footage `Partial video:`.
+
 ## What you get
 
 - **A live walkthrough:** pointer movement, target highlights, real app interaction, and local narration.

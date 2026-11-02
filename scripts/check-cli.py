@@ -15,6 +15,8 @@ with tempfile.TemporaryDirectory(prefix="showback-cli-") as temporary:
     script.write_text(json.dumps({"version": 1, "title": "Missing app", "app": "Showback Nonexistent Verification App", "scenes": [{"say": "This must not play."}]}))
     version = subprocess.run([binary, "--version"], capture_output=True, text=True, timeout=10)
     assert version.returncode == 0 and re.fullmatch(r"Showback \d+\.\d+\.\d+\n", version.stdout), version
+    run_help = subprocess.run([binary, "run", "--help"], capture_output=True, text=True, timeout=10)
+    assert run_help.returncode == 0 and "--mute" in run_help.stdout and not run_help.stderr, run_help
     validated = subprocess.run([binary, "validate", str(script)], capture_output=True, text=True, timeout=10)
     assert validated.returncode == 0 and "Valid:" in validated.stdout, validated
     invalid = subprocess.run([binary, "run", str(script), "--slient"], capture_output=True, text=True, timeout=10)

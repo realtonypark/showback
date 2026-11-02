@@ -41,6 +41,9 @@ with tempfile.TemporaryDirectory(prefix="showback-runs-") as temporary:
     assert failed.returncode == 1, failed
     result = json.loads((failed_bundle / "run.json").read_text())
     assert result["status"] == "failed" and result["mediaReady"], result
+    assert "Scene 1, expect:" in result["error"], result
+    assert result["video"] == str(failed_bundle / "demo.mp4"), result
+    assert "Partial video: " + result["video"] in failed.stdout, failed.stdout
     assert [event["scene"] for event in result["events"] if event["kind"] == "scene"] == [1], result
     assert not any(event["kind"] == "checked" for event in result["events"]), result
     assert len(result["narration"]) == 1 and (failed_bundle / "demo.mp4").exists()

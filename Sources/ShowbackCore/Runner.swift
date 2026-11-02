@@ -18,14 +18,17 @@ import AppKit
         var segments: [NarrationSegment] = []
         var status = RunStatus.completed
         var problem: String?
+        var step = "Preflight"
         var epoch = ProcessInfo.processInfo.systemUptime
         func time() -> Double { max(0, ProcessInfo.processInfo.systemUptime - epoch) }
         do {
             try assets.verifyInstallation()
             try await desktop.start(recording: !options.liveOnly)
             let voice = try SettingsStore().voice(in: assets.catalog)
+            step = "Narration preparation"
             let clips = try await Speech(assets: assets).prepare(script.scenes, voice: voice, in: bundle.root.appendingPathComponent("narration")) { print($0); fflush(stdout) }
             try Task.checkCancellation()
+            step = "Capture setup"
             try await desktop.focus()
             let window = try desktop.selected()
             let initialViewport: Box
@@ -48,6 +51,8 @@ import AppKit
                                       "capture": script.displayID.map { "display:\($0)" } ?? "window"], epoch: epoch)
             print("Presenting \(script.title)"); fflush(stdout)
             for (index, scene) in script.scenes.enumerated() {
+                step = "Scene \(index + 1), window selection"
+                print("Scene \(index + 1)/\(script.scenes.count)"); fflush(stdout)
                 try Task.checkCancellation()
                 try recording?.check()
                 let sceneApp = scene.app ?? script.app
@@ -65,6 +70,7 @@ import AppKit
                     }
                 }
                 try bundle.record("scene", at: time(), scene: index + 1, data: ["say": scene.say ?? "", "app": sceneApp, "windowID": currentWindow.number])
+                step = "Scene \(index + 1), narration"
                 let playback = try clips[index].map { try AudioPlayback(clip: $0, epoch: epoch, mute: options.mute) }
                 if let playback {
                     segments.append(playback.segment)
@@ -74,7 +80,8 @@ import AppKit
                 let narration = Task { @MainActor in try await playback?.wait() }
                 do {
                     try await withTaskCancellationHandler(operation: {
-                        for action in scene.actions {
+                        for (actionIndex, action) in scene.actions.enumerated() {
+                            step = "Scene \(index + 1), action \(actionIndex + 1)"
                             try Task.checkCancellation()
                             try recording?.check()
                             let result = try await desktop.execute(action) { target in
@@ -85,13 +92,16 @@ import AppKit
                             try bundle.record("action", at: time(), scene: index + 1, data: result)
                         }
                         if let expected = scene.expect {
+                            step = "Scene \(index + 1), expect"
                             let observed = try await desktop.waitFor(expected)
                             try bundle.record("checked", at: time(), scene: index + 1, data: observed)
                         }
                         if let absent = scene.absent {
+                            step = "Scene \(index + 1), absent"
                             let observed = try await desktop.waitForAbsent(absent)
                             try bundle.record("absent-checked", at: time(), scene: index + 1, data: observed)
                         }
+                        step = "Scene \(index + 1), narration"
                         try await narration.value
                     }, onCancel: { narration.cancel() })
                 } catch {
@@ -105,16 +115,17 @@ import AppKit
                     throw error
                 }
                 if let recording, !scene.actions.isEmpty || scene.expect != nil || scene.absent != nil {
+                    step = "Scene \(index + 1), screenshot"
                     try await recording.screenshot(to: bundle.root.appendingPathComponent(String(format: "frames/scene-%02d.png", index + 1)),
                                                    pointer: presentation!.timeline, at: time())
                 }
             }
         } catch {
             if let message = recording?.failureReason ?? (error as? CaptureFailure)?.message {
-                status = .failed; problem = message
+                status = .failed; problem = "\(step): \(message)"
             } else {
                 status = Task.isCancelled || error is CancellationError ? .cancelled : .failed
-                problem = status == .cancelled ? "Cancelled." : error.localizedDescription
+                problem = status == .cancelled ? "Cancelled." : "\(step): \(error.localizedDescription)"
             }
         }
         let pointer = presentation?.timeline ?? PointerTimeline()
@@ -147,6 +158,10 @@ import AppKit
         if Task.isCancelled, status == .completed { status = .cancelled; problem = "Cancelled." }
         try bundle.finish(status, error: problem, mediaReady: mediaReady)
         print("\(status.rawValue): \(bundle.root.path)"); fflush(stdout)
+        if let video = bundle.video {
+            print("\(status == .completed ? "Video" : "Partial video"): \(video.path)")
+        }
+        print("Summary: \(bundle.root.appendingPathComponent("summary.md").path)"); fflush(stdout)
         if let problem { FileHandle.standardError.write(Data((problem + "\n").utf8)) }
         return status
     }

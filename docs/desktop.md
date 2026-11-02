@@ -6,6 +6,7 @@
 - Start an isolated session before observing the desktop. A global host can retain stale display inventory.
 - Match the exact application name and, when supplied, exact window title. Refuse ambiguous or missing windows and action targets.
 - Resolve fresh refs per action. Respect delivery errors; never repeat a possibly delivered action automatically.
+- Execute an explicit `scroll-to` before presenting its target. Resolve the target again afterward so the pointer uses the revealed bounds. Other actions still require a target inside capture; offscreen page content is not a reason to widen capture.
 - Conditions pass on a direct match. Exclude container matches caused only by a matching descendant.
 - UI readiness uses bounded condition polling. Pointer travel is presentation pacing, not a substitute for readiness.
 - Close the session even on failure or cancellation. A process lock prevents concurrent Showback demos. Before session creation, persist a unique ownership token in `~/Library/Caches/Showback/desktop-session.json`. Under that lock, the next run closes only sessions matching that token through the public session inventory before creating another session. This also recovers forced exits and lost creation responses; a recovery failure prevents a new session.

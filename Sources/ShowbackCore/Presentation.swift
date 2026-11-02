@@ -24,7 +24,7 @@ public struct PointerTimeline: Codable, Sendable {
         let x = (target.x + target.width / 2 - viewport.x) / viewport.width
         let y = (target.y + target.height / 2 - viewport.y) / viewport.height
         guard [x, y].allSatisfy(\.isFinite), (0...1).contains(x), (0...1).contains(y) else {
-            throw Failure("The action target is outside the selected capture. Select the correct window, or explicitly choose a display.")
+            throw Failure("The action target is outside the selected capture. Reveal offscreen content with scroll-to or a tested scroll action, then point or click. Check the selected window; do not widen capture to reach offscreen page content.")
         }
         let previous = frame(at: time, width: 1, height: 1)
         let box = Box(x: (target.x - viewport.x) / viewport.width, y: (target.y - viewport.y) / viewport.height,
