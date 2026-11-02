@@ -1,0 +1,32 @@
+skills/showback/SKILL.md
+  s_324372bbd04bae::t_5f7c81c0c8ab87 95-102
+Sources/ShowbackCore/Application.swift
+  s_324372bbd04bae::t_a9586a07b3c3d3 37,72-81
+Sources/ShowbackCore/CLI.swift
+  s_324372bbd04bae::t_a9586a07b3c3d3 64-68,71-78,84-109
+  s_324372bbd04bae::t_a97d7fa99e9a66 110
+docs/getting-started.md
+  s_324372bbd04bae::t_5f7c81c0c8ab87 15,43-50
+README.md
+  s_324372bbd04bae::t_5f7c81c0c8ab87 29,52-59
+docs/verification.md
+  s_324372bbd04bae::t_5f7c81c0c8ab87 16
+Tests/ShowbackCoreTests/CLITests.swift
+  s_324372bbd04bae::t_1c1acb486db657 16-36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a45c81b5447a6e55ef302daf14dd3de6a691297c",
+  "prompts": {},
+  "sessions": {
+    "s_324372bbd04bae": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19e29-a867-7631-b295-df2fc420a7ff",
+        "model": "deepseek/deepseek-v4.1-flash-1017"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
