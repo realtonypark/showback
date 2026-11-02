@@ -34,6 +34,7 @@ import AppKit
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if isSettings, focusExistingSettings() { exit(0) }
         if isSettings, let assets {
             do { settings = try SettingsWindow(assets: assets); settings?.show() }
             catch { report(error); exit(1) }
@@ -68,5 +69,15 @@ import AppKit
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { isSettings }
+
+    private func focusExistingSettings() -> Bool {
+        guard let identifier = Bundle.main.bundleIdentifier else { return false }
+        let current = ProcessInfo.processInfo.processIdentifier
+        guard let existing = NSRunningApplication.runningApplications(withBundleIdentifier: identifier)
+            .first(where: { $0.processIdentifier != current && $0.activationPolicy == .regular }) else { return false }
+        existing.activate(options: [.activateAllWindows])
+        return true
+    }
+
     private func report(_ error: Error) { FileHandle.standardError.write(Data(("showback: \(error.localizedDescription)\n").utf8)) }
 }

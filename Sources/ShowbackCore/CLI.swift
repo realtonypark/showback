@@ -61,12 +61,51 @@ public enum CLI {
             print("Model: \(try assets.catalog.model)")
             print("Voice: \(try SettingsStore().voice(in: assets.catalog))")
             print("Assets: \(assets.root.path)")
+            if Bundle.main.bundleURL.pathExtension == "app" {
+                let skill = skillURL(forApp: Bundle.main.bundleURL)
+                try validateSkill(at: skill)
+                print("Skill: \(skill.path)")
+            }
             let result = try await Command.run(assets.url(for: "desktop-runtime"), ["status"])
             guard result.status == 0 else { throw Failure("Desktop status exited \(result.status): \(result.stderr)\(result.stdout)") }
-            print(result.stdout.trimmingCharacters(in: .whitespacesAndNewlines))
+            let status = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let permissions = permissionSummary(status) {
+                print("Permissions: \(permissions)")
+                if permissions.contains("denied") {
+                    print("Next: showback desktop permissions --guide")
+                }
+            }
+            print("Desktop: \(status)")
         default: return false
         }
         return true
+    }
+
+    static func skillURL(forApp app: URL) -> URL {
+        app.deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent(".agents/skills/showback/SKILL.md")
+    }
+
+    static func validateSkill(at url: URL) throws {
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw Failure("Agent skill is not installed at \(url.path). Reinstall Showback.")
+        }
+        let text = try String(contentsOf: url, encoding: .utf8)
+        guard text.hasPrefix("---\nname: showback\n") else {
+            throw Failure("Agent skill is invalid at \(url.path). Reinstall Showback.")
+        }
+    }
+
+    static func permissionSummary(_ output: String) -> String? {
+        guard let data = output.data(using: .utf8),
+              let response = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let payload = response["data"] as? [String: Any],
+              let permissions = payload["permissions"] as? [String: Any] else { return nil }
+        return [("accessibility", "Accessibility"), ("automation", "Automation"), ("screen_recording", "Screen recording")]
+            .compactMap { key, label in
+                ((permissions[key] as? [String: Any])?["state"] as? String).map { "\(label) \($0)" }
+            }
+            .joined(separator: ", ")
     }
 
     public static let help = """

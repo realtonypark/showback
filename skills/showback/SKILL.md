@@ -92,7 +92,14 @@ If a run fails, read its summary and the named scene/action in `script.json`. In
 
 ## 4. Verify and deliver
 
-Read the printed `Summary:` path and `run.json`. A successful recorded delivery requires `status: completed`, `mediaReady: true`, and a finalized video. The CLI's `Video:` line and `run.json.video` identify the absolute exported path; older bundles name it in `summary.md`.
+Read the printed `Summary:` path and `run.json`. A successful recorded delivery requires `status: completed`, `mediaReady: true`, and a finalized video. The CLI's `Video:` line and `run.json.video` identify the absolute exported path; older bundles name it in `summary.md`. Check the gates with the absolute bundle path:
+
+```sh
+bundle=/absolute/path/to/demo.showback
+test -f "$bundle/demo.mp4"
+test "$(plutil -extract status raw -o - "$bundle/run.json")" = completed
+test "$(plutil -extract mediaReady raw -o - "$bundle/run.json")" = true
+```
 
 **Deliver `demo.mp4`.** It contains narration and pointer/highlight overlays. `recording.mp4` is raw source video without them. Do not select a file by size or by the word "recording" in its name. Failed/cancelled runs may have a `Partial video:`; label that status even if it plays. `.incomplete` means media did not finalize.
 

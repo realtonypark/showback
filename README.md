@@ -26,7 +26,7 @@ export PATH="$HOME/.local/bin:$PATH"
 showback doctor
 ```
 
-Installation builds the app and downloads about **134 MB** of pinned model, voice, and runtime assets. It installs the CLI, agent skill, and local speech model together:
+Installation builds the app and downloads about **134 MB** of pinned model, voice, and runtime assets. It commonly takes a few minutes. It installs the CLI, agent skill, and local speech model together:
 
 - `~/Applications/Showback.app`
 - `~/.local/bin/showback`
@@ -49,7 +49,14 @@ Start a new agent session so it can discover the installed skill, then ask:
 
 > Use Showback to demonstrate this change in the running app. Walk through the changed flow, check the visible result before explaining it, and give me the recorded video.
 
-The skill is installed in the shared `.agents/skills` location. Hosts with a different skill directory can copy [skills/showback](skills/showback) into their configured location. Showback runs when requested, not after every code change.
+The skill is installed in the shared `.agents/skills` location. If your host uses another directory, copy [skills/showback](skills/showback) into it:
+
+```sh
+mkdir -p /path/to/your/agent/skills
+cp -R skills/showback /path/to/your/agent/skills/
+```
+
+Showback runs when requested, not after every code change.
 
 ### Try it yourself
 
