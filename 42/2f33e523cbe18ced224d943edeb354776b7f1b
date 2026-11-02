@@ -1,0 +1,20 @@
+docs/verification.md
+  s_750ce7e392eff7::t_81f3ae3cc40859 91
+  s_750ce7e392eff7::t_d52d297a66aed6 92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "422f33e523cbe18ced224d943edeb354776b7f1b",
+  "prompts": {},
+  "sessions": {
+    "s_750ce7e392eff7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19deb-65e2-7a91-8c3f-3e38a3d33985",
+        "model": "autorouter"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
