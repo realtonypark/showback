@@ -1,6 +1,4 @@
-# Showback
-
-## make your coding agents show not tell
+# Showback - make your coding agents show not tell
 
 Showback gives a coding agent hands and a voice on your computer. It controls the real app like a person would — clicks, types, and speaks the walkthrough out loud while it works. It talks to you, explains its output, checks the result on screen, and saves the demo as a shareable MP4.
 
@@ -45,7 +43,7 @@ showback doctor
 
 ### Ask your coding agent
 
-Start a new agent session so it can discover the installed skill, then ask:
+Tell your favorite coding agent:
 
 > Use Showback to demonstrate this change in the running app. Walk through the changed flow, check the visible result before explaining it, and give me the recorded video.
 
