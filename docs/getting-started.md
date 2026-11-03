@@ -12,7 +12,7 @@ export PATH="$HOME/.local/bin:$PATH"
 showback doctor
 ```
 
-The installer builds locally and downloads approximately 134 MB of pinned assets, including the English model and three voices. The installed app occupies roughly 143 MiB. The first run has no separate model download. Developer tools and network access are needed for installation; runs work offline afterward.
+The installer builds locally and downloads approximately 134 MB of pinned assets, including the English model and three voices. Installation commonly takes a few minutes. The installed app occupies roughly 143 MiB. The first run has no separate model download. Developer tools and network access are needed for installation; runs work offline afterward.
 
 For an isolated prefix, use `./scripts/install.sh /absolute/prefix`. The app, CLI, and skill are then placed under that prefix's `Applications`, `.local/bin`, and `.agents/skills` directories.
 
@@ -40,7 +40,21 @@ The command prints the final status and absolute bundle path. Open `demo.mp4` in
 
 ## Agent setup
 
-The installer copies [the authoring skill](../skills/showback/SKILL.md) to `~/.agents/skills/showback/`. Restart the agent session to refresh discovery. If your host reads another skill directory, copy that folder to the host's configured location. Hosts differ; this shared-directory install is not a promise that every host auto-discovers it.
+The installer copies [the authoring skill](../skills/showback/SKILL.md) to `~/.agents/skills/showback/`. Restart the agent session to refresh discovery. If your host reads another skill directory, copy that folder to the host's configured location:
+
+```sh
+mkdir -p /path/to/your/agent/skills
+cp -R skills/showback /path/to/your/agent/skills/
+```
+
+Hosts differ; this shared-directory install is not a promise that every host auto-discovers it.
+
+Pi reads project skills from `.pi/skills`. To use the installed skill from another project, copy it to Pi's user directory:
+
+```sh
+mkdir -p "$HOME/.pi/agent/skills"
+cp -R "$HOME/.agents/skills/showback" "$HOME/.pi/agent/skills/"
+```
 
 Ask the agent to inspect the actual running app, author a short script using current labels, and run a checked walkthrough. Do not reuse snapshot refs as script selectors. Success statements belong after the scene that checks the result.
 
