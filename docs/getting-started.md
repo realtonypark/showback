@@ -49,6 +49,13 @@ cp -R skills/showback /path/to/your/agent/skills/
 
 Hosts differ; this shared-directory install is not a promise that every host auto-discovers it.
 
+Pi reads project skills from `.pi/skills`. To use the installed skill from another project, copy it to Pi's user directory:
+
+```sh
+mkdir -p "$HOME/.pi/agent/skills"
+cp -R "$HOME/.agents/skills/showback" "$HOME/.pi/agent/skills/"
+```
+
 Ask the agent to inspect the actual running app, author a short script using current labels, and run a checked walkthrough. Do not reuse snapshot refs as script selectors. Success statements belong after the scene that checks the result.
 
 ## Common problems

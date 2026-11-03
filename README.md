@@ -56,6 +56,13 @@ mkdir -p /path/to/your/agent/skills
 cp -R skills/showback /path/to/your/agent/skills/
 ```
 
+Pi reads project skills from `.pi/skills`. To use the installed skill from another project, copy it to Pi's user directory:
+
+```sh
+mkdir -p "$HOME/.pi/agent/skills"
+cp -R "$HOME/.agents/skills/showback" "$HOME/.pi/agent/skills/"
+```
+
 Showback runs when requested, not after every code change.
 
 ### Try it yourself

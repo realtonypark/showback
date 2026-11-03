@@ -7,7 +7,7 @@
   },
   "scenes": [
     {
-      "say": "This is Showback. The English speech model is installed locally, alongside the command-line tool and agent skill.",
+      "say": "This is Showback. I will check that the English speech model is installed locally.",
       "actions": [
         {
           "point": {
@@ -20,6 +20,9 @@
         "role": "statictext",
         "text": "Pocket TTS English 18M"
       }
+    },
+    {
+      "say": "The English speech model is installed."
     },
     {
       "say": "This picker controls the voice used for future demonstrations. I can inspect it without changing your saved choice.",
@@ -37,7 +40,7 @@
       }
     },
     {
-      "say": "The voice picker is available. This walkthrough is being saved as an MP4 with narration, screenshots, and the checks that passed."
+      "say": "The voice picker is available."
     }
   ]
 }

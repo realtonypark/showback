@@ -48,6 +48,7 @@ public enum CLI {
             FileHandle.standardError.write(Data(result.stderr.utf8))
             if result.status != 0 { exit(result.status) }
         case "validate":
+            if arguments.count == 2, ["--help", "-h"].contains(arguments[1]) { print(validateHelp); return true }
             guard arguments.count == 2 else { throw Failure("Usage: showback validate SCRIPT.json") }
             let script = try DemoScript.load(URL(fileURLWithPath: arguments[1]))
             print("Valid: \(script.title) · \(script.scenes.count) scenes")
@@ -107,6 +108,8 @@ public enum CLI {
             }
             .joined(separator: ", ")
     }
+
+    static let validateHelp = "Usage: showback validate SCRIPT.json"
 
     public static let help = """
     Showback

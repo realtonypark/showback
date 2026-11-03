@@ -34,4 +34,9 @@ final class CLITests: XCTestCase {
         let output = #"{"data":{"permissions":{"accessibility":{"state":"denied"},"automation":{"state":"unknown"},"screen_recording":{"state":"granted"}}}}"#
         XCTAssertEqual(CLI.permissionSummary(output), "Accessibility denied, Automation unknown, Screen recording granted")
     }
+
+    func testValidateHelpDoesNotTreatFlagAsScript() async throws {
+        let handled = try await CLI.perform(["validate", "--help"])
+        XCTAssertTrue(handled)
+    }
 }
