@@ -96,8 +96,8 @@ Read the printed `Summary:` path and `run.json`. A successful recorded delivery 
 
 ```sh
 bundle=/absolute/path/to/demo.showback
-test -f "$bundle/demo.mp4"
-test "$(plutil -extract status raw -o - "$bundle/run.json")" = completed
+test -f "$bundle/demo.mp4" &&
+test "$(plutil -extract status raw -o - "$bundle/run.json")" = completed &&
 test "$(plutil -extract mediaReady raw -o - "$bundle/run.json")" = true
 ```
 

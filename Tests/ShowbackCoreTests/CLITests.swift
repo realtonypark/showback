@@ -35,6 +35,19 @@ final class CLITests: XCTestCase {
         XCTAssertEqual(CLI.permissionSummary(output), "Accessibility denied, Automation unknown, Screen recording granted")
     }
 
+    func testDoctorRequiresBothGrantsBeforeHidingGuideHint() {
+        let granted = #"{"data":{"permissions":{"accessibility":{"state":"granted"},"automation":{"state":"unknown"},"screen_recording":{"state":"granted"}}}}"#
+        XCTAssertTrue(CLI.requiredGrantsReady(granted))
+        for output in [
+            #"{"data":{"permissions":{"accessibility":{"state":"denied"},"automation":{"state":"granted"},"screen_recording":{"state":"granted"}}}}"#,
+            #"{"data":{"permissions":{"accessibility":{"state":"unknown"},"automation":{"state":"granted"},"screen_recording":{"state":"granted"}}}}"#,
+            #"{"data":{"permissions":{"accessibility":{"state":"granted"},"automation":{"state":"granted"},"screen_recording":{"state":"unknown"}}}}"#,
+            "not json",
+        ] {
+            XCTAssertFalse(CLI.requiredGrantsReady(output))
+        }
+    }
+
     func testValidateHelpDoesNotTreatFlagAsScript() async throws {
         let handled = try await CLI.perform(["validate", "--help"])
         XCTAssertTrue(handled)

@@ -72,7 +72,7 @@ public enum CLI {
             let status = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
             if let permissions = permissionSummary(status) {
                 print("Permissions: \(permissions)")
-                if permissions.contains("denied") {
+                if !requiredGrantsReady(status) {
                     print("Next: showback desktop permissions --guide")
                 }
             }
@@ -97,11 +97,23 @@ public enum CLI {
         }
     }
 
-    static func permissionSummary(_ output: String) -> String? {
+    static func permissionsPayload(_ output: String) -> [String: Any]? {
         guard let data = output.data(using: .utf8),
               let response = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let payload = response["data"] as? [String: Any],
               let permissions = payload["permissions"] as? [String: Any] else { return nil }
+        return permissions
+    }
+
+    static func requiredGrantsReady(_ output: String) -> Bool {
+        guard let permissions = permissionsPayload(output) else { return false }
+        return ["accessibility", "screen_recording"].allSatisfy {
+            (permissions[$0] as? [String: Any])?["state"] as? String == "granted"
+        }
+    }
+
+    static func permissionSummary(_ output: String) -> String? {
+        guard let permissions = permissionsPayload(output) else { return nil }
         return [("accessibility", "Accessibility"), ("automation", "Automation"), ("screen_recording", "Screen recording")]
             .compactMap { key, label in
                 ((permissions[key] as? [String: Any])?["state"] as? String).map { "\(label) \($0)" }
