@@ -1,0 +1,18 @@
+Sources/ShowbackCore/CLI.swift
+  h_05e5164a29872e 75,100,105-116
+Tests/ShowbackCoreTests/CLITests.swift
+  h_05e5164a29872e 38-50
+skills/showback/SKILL.md
+  h_05e5164a29872e 99-100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1097185d1a4a60a8088edfc34140e2fc71b9911b",
+  "prompts": {},
+  "humans": {
+    "h_05e5164a29872e": {
+      "author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
