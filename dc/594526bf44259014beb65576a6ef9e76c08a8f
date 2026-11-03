@@ -1,0 +1,30 @@
+docs/getting-started.md
+  s_324372bbd04bae::t_1b2b3f4334d426 52-58
+examples/showback-demo.json
+  s_324372bbd04bae::t_8b25f57940548b 10,24-26,43
+Tests/ShowbackCoreTests/CLITests.swift
+  s_324372bbd04bae::t_724cd6b30f44e9 39-40
+  s_324372bbd04bae::t_1b2b3f4334d426 37,41
+  s_324372bbd04bae::t_df498a315cbceb 38
+README.md
+  s_324372bbd04bae::t_1b2b3f4334d426 59-65
+Sources/ShowbackCore/CLI.swift
+  s_324372bbd04bae::t_1b2b3f4334d426 51,112
+  s_324372bbd04bae::t_1eb7614e0b6f8b 113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "dc594526bf44259014beb65576a6ef9e76c08a8f",
+  "prompts": {},
+  "sessions": {
+    "s_324372bbd04bae": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19e29-a867-7631-b295-df2fc420a7ff",
+        "model": "deepseek/deepseek-v4.1-flash-1017"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
