@@ -2,6 +2,21 @@ import XCTest
 @testable import ShowbackCore
 
 final class ScriptTests: XCTestCase {
+    func testLoadWrapsReadAndParseErrorsWithScriptPath() throws {
+        let missing = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        XCTAssertThrowsError(try DemoScript.load(missing)) { error in
+            XCTAssertTrue(error is Failure, "\(type(of: error))")
+            XCTAssertTrue(error.localizedDescription.contains(missing.path), error.localizedDescription)
+        }
+        let bad = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        defer { try? FileManager.default.removeItem(at: bad) }
+        try Data("not json".utf8).write(to: bad)
+        XCTAssertThrowsError(try DemoScript.load(bad)) { error in
+            XCTAssertTrue(error is Failure, "\(type(of: error))")
+            XCTAssertTrue(error.localizedDescription.contains(bad.path), error.localizedDescription)
+        }
+    }
+
     func testAcceptsNativeOptionSelection() {
         let data = Data(#"{"version":1,"title":"Voice","app":"Showback","scenes":[{"actions":[{"select":{"target":{"role":"combobox","name":"Voice"},"option":"Marius"}}],"expect":{"role":"combobox","text":"Marius"}}]}"#.utf8)
         XCTAssertNoThrow(try DemoScript.parse(data))

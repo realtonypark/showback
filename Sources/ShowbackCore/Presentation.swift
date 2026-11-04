@@ -1,13 +1,13 @@
 import AppKit
 
-public struct PointerFrame: Equatable {
+struct PointerFrame: Equatable {
     let x: Double
     let y: Double
     let target: CGRect
     let scale: Double
 }
 
-public struct PointerMark: Codable, Sendable {
+struct PointerMark: Codable, Sendable {
     let time: Double
     let box: Box
     let fromX: Double
@@ -16,9 +16,8 @@ public struct PointerMark: Codable, Sendable {
     let travel: Double
 }
 
-public struct PointerTimeline: Codable, Sendable {
-    public private(set) var marks: [PointerMark] = []
-    public init() {}
+struct PointerTimeline: Codable, Sendable {
+    private(set) var marks: [PointerMark] = []
 
     mutating func point(at time: Double, target: Box, viewport: Box, travel: Double = 0.32) throws {
         let x = (target.x + target.width / 2 - viewport.x) / viewport.width

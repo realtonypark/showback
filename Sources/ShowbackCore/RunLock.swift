@@ -1,8 +1,9 @@
 import Foundation
 
-public final class RunLock {
+final class RunLock {
     private var descriptor: Int32 = -1
-    public init(url: URL) throws {
+    /// - Throws: `Failure` when the lock cannot be created or another run owns it.
+    init(url: URL) throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         let descriptor = open(url.path, O_CREAT | O_RDWR | O_NOFOLLOW | O_CLOEXEC, 0o600)
         guard descriptor >= 0 else { throw Failure("Cannot create the desktop run lock.") }
@@ -12,7 +13,7 @@ public final class RunLock {
         }
         self.descriptor = descriptor
     }
-    public func release() {
+    func release() {
         if descriptor >= 0 { flock(descriptor, LOCK_UN); close(descriptor); descriptor = -1 }
     }
     deinit { release() }

@@ -3,7 +3,9 @@ import XCTest
 
 final class ProcessTests: XCTestCase {
     func testInheritsLaunchingEnvironment() async throws {
-        let expected = try XCTUnwrap(ProcessInfo.processInfo.environment["HOME"])
+        guard let expected = ProcessInfo.processInfo.environment["HOME"] else {
+            throw XCTSkip("HOME is not set in the launching environment.")
+        }
         let result = try await Command.run(URL(fileURLWithPath: "/usr/bin/printenv"), ["HOME"])
         XCTAssertEqual(result.status, 0)
         XCTAssertEqual(result.stdout.trimmingCharacters(in: .whitespacesAndNewlines), expected)
@@ -13,8 +15,9 @@ final class ProcessTests: XCTestCase {
         let source = file.appendingPathExtension("input")
         defer { try? FileManager.default.removeItem(at: file); try? FileManager.default.removeItem(at: source) }
         try Data([0, 255, 10]).write(to: source)
-        let result = try await Command.run(URL(fileURLWithPath: "/bin/cat"), [source.path], stdoutFile: file)
+        let result = try await Command.run(URL(fileURLWithPath: "/bin/cat"), [source.path], options: CommandOptions(stdoutFile: file))
         XCTAssertEqual(result.status, 0)
+        XCTAssertEqual(result.stdout, "")
         XCTAssertEqual(try Data(contentsOf: file), Data([0, 255, 10]))
     }
     func testArgumentsArePassedLiterally() async throws {
@@ -38,8 +41,8 @@ final class ProcessTests: XCTestCase {
             let redirect = mode == "stderr" ? " >&2" : ""
             do {
                 _ = try await Command.run(URL(fileURLWithPath: "/bin/sh"),
-                    ["-c", "head -c 17825792 /dev/zero" + redirect + "; sleep 5"], timeout: 2,
-                    stdoutFile: mode == "file" ? file : nil)
+                    ["-c", "head -c 17825792 /dev/zero" + redirect + "; sleep 5"],
+                    options: CommandOptions(timeout: 10, stdoutFile: mode == "file" ? file : nil))
                 XCTFail("Oversized output succeeded")
             } catch { XCTAssertTrue(error.localizedDescription.contains("output exceeds"), error.localizedDescription) }
             if mode == "file" { XCTAssertLessThanOrEqual(try file.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0, 16_777_216) }
@@ -57,7 +60,7 @@ final class ProcessTests: XCTestCase {
         var failures: [String] = []
         Command.drain(pipe, into: file, isRunning: {
             if !exited {
-                try! pipe.fileHandleForWriting.write(contentsOf: final)
+                do { try pipe.fileHandleForWriting.write(contentsOf: final) } catch { failures.append(error.localizedDescription) }
                 exited = true
             }
             return false
@@ -68,7 +71,7 @@ final class ProcessTests: XCTestCase {
 
     func testDescendantHoldingPipeDoesNotDelayDirectChildOutput() async throws {
         let result = try await Command.run(URL(fileURLWithPath: "/bin/sh"),
-            ["-c", "sleep 10 & printf '%s' \"$!\" >&2; printf final; exit 0"], timeout: 2)
+            ["-c", "sleep 10 & printf '%s' \"$!\" >&2; printf final; exit 0"], options: CommandOptions(timeout: 2))
         let descendant = try XCTUnwrap(Int32(result.stderr))
         defer { kill(descendant, SIGTERM) }
         XCTAssertEqual(result.status, 0)
@@ -78,8 +81,41 @@ final class ProcessTests: XCTestCase {
 
     func testTerminatesTimedOutCommand() async {
         do {
-            _ = try await Command.run(URL(fileURLWithPath: "/bin/sleep"), ["20"], timeout: 0.1)
+            _ = try await Command.run(URL(fileURLWithPath: "/bin/sleep"), ["20"], options: CommandOptions(timeout: 0.1))
             XCTFail("Timed-out command succeeded")
         } catch { XCTAssertTrue(error.localizedDescription.contains("timed out")) }
+    }
+
+    func testLaunchFailureNamesExecutable() async {
+        do {
+            _ = try await Command.run(URL(fileURLWithPath: "/nonexistent/showback-probe"), [])
+            XCTFail("Missing binary succeeded")
+        } catch {
+            XCTAssertTrue(error is Failure, "\(type(of: error))")
+            XCTAssertTrue(error.localizedDescription.contains("showback-probe"), error.localizedDescription)
+        }
+    }
+    func testCancellationThrowsCancellationError() async throws {
+        let marker = FileManager.default.temporaryDirectory.appendingPathComponent("showback-cancel-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: marker) }
+        let task = Task {
+            try await Command.run(URL(fileURLWithPath: "/bin/sh"), ["-c", "touch '\(marker.path)'; exec sleep 20"],
+                                  options: CommandOptions(timeout: 30))
+        }
+        let deadline = ProcessInfo.processInfo.systemUptime + 10
+        while !FileManager.default.fileExists(atPath: marker.path), ProcessInfo.processInfo.systemUptime < deadline {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        guard FileManager.default.fileExists(atPath: marker.path) else {
+            task.cancel()
+            return XCTFail("Child process never signalled readiness")
+        }
+        task.cancel()
+        do {
+            _ = try await task.value
+            XCTFail("Cancelled command succeeded")
+        } catch {
+            XCTAssertTrue(error is CancellationError, "got \(type(of: error)): \(error)")
+        }
     }
 }

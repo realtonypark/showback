@@ -1,18 +1,23 @@
 import Foundation
 import AVFoundation
 
-public struct SpeechClip {
-    public let url: URL
-    public let duration: Double
+struct SpeechClip {
+    let url: URL
+    let duration: Double
 }
 
-public struct Speech {
-    public let assets: Assets
-    public init(assets: Assets) { self.assets = assets }
-    public func prepare(_ scenes: [Scene], voice: String, in folder: URL,
-                        progress: (String) -> Void) async throws -> [Int: SpeechClip] {
+struct Speech {
+    let assets: Assets
+    /// - Throws: `Failure` for missing assets, unknown voices, or synthesis failures; `CancellationError` when cancelled.
+    func prepare(_ scenes: [Scene], voice: String, in folder: URL,
+                 progress: (String) -> Void) async throws -> [SpeechClip?] {
         try assets.verifyInstallation()
-        guard try assets.catalog.voices.contains(where: { $0.id == voice }) else { throw Failure("Unknown voice: \(voice).") }
+        return try await Self.synthesize(scenes, voice: voice, assets: assets, in: folder, progress: progress)
+    }
+
+    static func synthesize(_ scenes: [Scene], voice: String, assets: Assets, in folder: URL,
+                           progress: (String) -> Void) async throws -> [SpeechClip?] {
+        guard try Assets.loadCatalog().voices.contains(where: { $0.id == voice }) else { throw Failure("Unknown voice: \(voice).") }
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let config = try String(contentsOf: Assets.resource("speech", "yaml"), encoding: .utf8)
             .replacingOccurrences(of: "__MODEL_FILE__", with: String(decoding: JSONEncoder().encode(assets.url(for: "model").path), as: UTF8.self))
@@ -22,7 +27,7 @@ public struct Speech {
         var environment = ProcessInfo.processInfo.environment
         environment["HF_HUB_OFFLINE"] = "1"
         environment["HF_HUB_DISABLE_TELEMETRY"] = "1"
-        var clips: [Int: SpeechClip] = [:]
+        var clips: [SpeechClip?] = Array(repeating: nil, count: scenes.count)
         for (index, scene) in scenes.enumerated() {
             try Task.checkCancellation()
             guard let text = scene.say else { continue }
@@ -30,7 +35,7 @@ public struct Speech {
             let output = folder.appendingPathComponent(String(format: "scene-%02d.wav", index + 1))
             let result = try await Command.run(assets.url(for: "speech-runtime"), ["generate", "--config", configURL.path,
                 "--voice", assets.url(for: "voice-\(voice)").path, "--text", text, "--output-path", output.path],
-                timeout: 300, directory: assets.root, environment: environment)
+                options: CommandOptions(timeout: 300, directory: assets.root, environment: environment))
             guard result.status == 0 else { throw Failure("Narration failed for scene \(index + 1): \(result.stderr)") }
             clips[index] = try Self.inspect(output)
         }

@@ -1,7 +1,8 @@
 import Foundation
 
-public enum Paths {
-    public static func assets() throws -> Assets {
+enum Paths {
+    /// - Throws: `Failure` for a non-absolute SHOWBACK_ASSETS or when no installed assets exist.
+    static func assets() throws -> Assets {
         if let path = ProcessInfo.processInfo.environment["SHOWBACK_ASSETS"] {
             guard path.hasPrefix("/") else { throw Failure("SHOWBACK_ASSETS must be an absolute path.") }
             return Assets(root: URL(fileURLWithPath: path))
@@ -12,11 +13,11 @@ public enum Paths {
         return Assets(root: resources.appendingPathComponent("Assets"))
     }
 
-    public static var settings: URL {
+    static var settings: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Showback/settings.json")
     }
-    public static var recordings: URL {
+    static var recordings: URL {
         FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Movies/Showback")
     }
 }

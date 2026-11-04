@@ -1,20 +1,37 @@
 import Foundation
 import CoreFoundation
 
-public struct DemoScript {
-    public let title: String
-    public let app: String
-    public let windowTitle: String?
-    public let displayID: UInt32?
-    public let scenes: [Scene]
+struct DemoScript {
+    let title: String
+    let app: String
+    let windowTitle: String?
+    let displayID: UInt32?
+    let scenes: [Scene]
 
-    public static func load(_ url: URL) throws -> DemoScript {
-        let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-        guard size <= 1_048_576 else { throw Failure("Script exceeds 1 MiB.") }
-        return try parse(Data(contentsOf: url))
+    /// - Throws: `Failure` for oversize scripts or schema violations; file errors when unreadable.
+    static func load(_ url: URL) throws -> DemoScript {
+        let size: Int
+        do {
+            size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        } catch {
+            throw Failure("Cannot read script at \(url.path): \(error.localizedDescription)")
+        }
+        guard size <= 1_048_576 else { throw Failure("Script at \(url.path) exceeds 1 MiB.") }
+        let data: Data
+        do {
+            data = try Data(contentsOf: url)
+        } catch {
+            throw Failure("Cannot read script at \(url.path): \(error.localizedDescription)")
+        }
+        do {
+            return try parse(data)
+        } catch {
+            throw Failure("Cannot parse script at \(url.path): \(error.localizedDescription)")
+        }
     }
 
-    public static func parse(_ data: Data) throws -> DemoScript {
+    /// - Throws: `Failure` describing the first schema violation (version, fields, scene limits).
+    static func parse(_ data: Data) throws -> DemoScript {
         guard data.count <= 1_048_576 else { throw Failure("Script exceeds 1 MiB.") }
         let root = try Fields(JSONSerialization.jsonObject(with: data), keys: ["version", "title", "app", "window", "capture", "scenes"])
         guard try root.number("version") == 1 else { throw Failure("Only script version 1 is supported.") }
@@ -50,26 +67,26 @@ public struct DemoScript {
     }
 }
 
-public struct Scene {
-    public let say: String?
-    public let actions: [Action]
-    public let expect: Expected?
-    public let absent: Expected?
-    public let app: String?
-    public let windowTitle: String?
+struct Scene {
+    let say: String?
+    let actions: [Action]
+    let expect: Expected?
+    let absent: Expected?
+    let app: String?
+    let windowTitle: String?
     init(say: String?, actions: [Action], expect: Expected?, absent: Expected? = nil, app: String? = nil, windowTitle: String? = nil) {
         self.say = say; self.actions = actions; self.expect = expect; self.absent = absent; self.app = app; self.windowTitle = windowTitle
     }
 }
 
-public struct Selector: Equatable, CustomStringConvertible {
+struct Selector: Equatable, CustomStringConvertible {
     let role: String?
     let name: String?
     let text: String?
     let nativeID: String?
     static let keys: Set<String> = ["role", "name", "text", "nativeID"]
 
-    public var description: String {
+    var description: String {
         [("role", role), ("name", name), ("text", text), ("nativeID", nativeID)]
             .compactMap { key, value in value.map { "\(key)=\(String(reflecting: $0))" } }.joined(separator: ", ")
     }
@@ -86,7 +103,7 @@ public struct Selector: Equatable, CustomStringConvertible {
     static func parse(_ value: Any) throws -> Selector { try parse(Fields(value, keys: keys)) }
 }
 
-public struct Expected {
+struct Expected {
     let target: Selector
     let timeout: Double
     static func parse(_ value: Any) throws -> Expected {
@@ -97,7 +114,7 @@ public struct Expected {
     }
 }
 
-public enum Action {
+enum Action {
     case point(Selector)
     case click(Selector)
     case type(Selector, String)

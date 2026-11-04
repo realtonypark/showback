@@ -25,17 +25,83 @@ final class SpeechTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: folder) }
         func write(_ name: String, amplitude: Float) throws -> URL {
             let url = folder.appendingPathComponent(name + ".wav")
-            let format = AVAudioFormat(standardFormatWithSampleRate: 24000, channels: 1)!
-            let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 2400)!
-            buffer.frameLength = 2400
-            for i in 0..<2400 { buffer.floatChannelData![0][i] = amplitude * sin(Float(i) * 0.05) }
-            let file = try AVAudioFile(forWriting: url, settings: format.settings)
-            try file.write(from: buffer)
+            try WavFixture.write(to: url, amplitude: amplitude)
             return url
         }
         let audible = try write("speech", amplitude: 0.25)
         XCTAssertEqual(try Speech.inspect(audible).duration, 0.1, accuracy: 0.001)
         let silent = try write("silent", amplitude: 0)
         XCTAssertThrowsError(try Speech.inspect(silent))
+    }
+
+    private func fakeRuntime(root: URL, script: String) throws -> URL {
+        let runtime = try Assets(root: root).url(for: "speech-runtime")
+        try FileManager.default.createDirectory(at: runtime.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try script.write(to: runtime, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: runtime.path)
+        return runtime
+    }
+
+    private func scene(say: String?) -> Scene {
+        Scene(say: say, actions: [], expect: nil, absent: nil, app: nil, windowTitle: nil)
+    }
+
+    func testSynthesizeWritesClipsForSpokenScenesOnly() async throws {
+        let root = try TestFiles.tempDir(self)
+        let catalog = try Assets.loadCatalog()
+        let voice = catalog.voices[0].id
+        let sample = root.appendingPathComponent("sample.wav")
+        try WavFixture.write(to: sample)
+        let log = root.appendingPathComponent("calls")
+        let runtime = try fakeRuntime(root: root, script: """
+        #!/bin/sh
+        printf '%s\\n' "$*" >> '\(log.path)'
+        out=""; prev=""
+        for arg in "$@"; do
+          if [ "$prev" = --output-path ]; then out="$arg"; fi
+          prev="$arg"
+        done
+        cp '\(sample.path)' "$out"
+        """)
+        let folder = root.appendingPathComponent("narration")
+        let clips = try await Speech.synthesize([scene(say: "Hello"), scene(say: nil)], voice: voice,
+                                                assets: Assets(root: root), in: folder) { _ in }
+        XCTAssertEqual(clips.count, 2)
+        XCTAssertEqual(clips[0]?.duration ?? -1, 0.1, accuracy: 0.01)
+        XCTAssertNil(clips[1])
+        let config = try String(contentsOf: folder.appendingPathComponent("config.yaml"), encoding: .utf8)
+        XCTAssertFalse(config.contains("__MODEL_FILE__"), config)
+        XCTAssertFalse(config.contains("__TOKENIZER_FILE__"), config)
+        XCTAssertTrue(config.contains("model.safetensors"), config)
+        XCTAssertTrue(config.contains("tokenizer.model"), config)
+        let calls = try String(contentsOf: log, encoding: .utf8)
+        XCTAssertTrue(calls.contains("--voice"), calls)
+        XCTAssertTrue(calls.contains("\(voice).safetensors"), calls)
+    }
+
+    func testSynthesizeRejectsUnknownVoice() async throws {
+        let root = try TestFiles.tempDir(self)
+        let catalog = try Assets.loadCatalog()
+        do {
+            _ = try await Speech.synthesize([scene(say: "Hello")], voice: "nope",
+                                            assets: Assets(root: root), in: root.appendingPathComponent("narration")) { _ in }
+            XCTFail("expected unknown voice to throw")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("Unknown voice"), error.localizedDescription)
+        }
+    }
+
+    func testSynthesizeMapsRuntimeFailure() async throws {
+        let root = try TestFiles.tempDir(self)
+        let catalog = try Assets.loadCatalog()
+        _ = try fakeRuntime(root: root, script: "#!/bin/sh\necho boom >&2\nexit 3\n")
+        do {
+            _ = try await Speech.synthesize([scene(say: "Hello")], voice: catalog.voices[0].id,
+                                            assets: Assets(root: root), in: root.appendingPathComponent("narration")) { _ in }
+            XCTFail("expected runtime failure to throw")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("Narration failed for scene 1"), error.localizedDescription)
+            XCTAssertTrue(error.localizedDescription.contains("boom"), error.localizedDescription)
+        }
     }
 }

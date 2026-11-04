@@ -5,7 +5,53 @@ import CoreImage
 
 struct CaptureFailure: LocalizedError {
     let message: String
+    init(message: String) { self.message = message }
     var errorDescription: String? { message }
+}
+
+/// Capture mode: a fixed display or a followed window. Constructed once per run.
+@MainActor enum CaptureTarget {
+    case display(id: UInt32)
+    case window(id: UInt32)
+
+    static func resolve(displayID: UInt32?, windowID: UInt32) throws -> (target: CaptureTarget, viewport: Box) {
+        if let displayID {
+            let rect = CGDisplayBounds(displayID)
+            guard rect.width > 0, rect.height > 0 else { throw Failure("Selected display is unavailable.") }
+            return (.display(id: displayID), Box(x: rect.minX, y: rect.minY, width: rect.width, height: rect.height))
+        }
+        return (.window(id: windowID), try Recording.windowBounds(windowID))
+    }
+
+    var label: String {
+        switch self {
+        case .display(let id): return "display:\(id)"
+        case .window: return "window"
+        }
+    }
+
+    /// Live viewport for pointing: displays stay fixed, windows are re-read (the scene window can change).
+    func liveViewport(window: UInt32, initial: Box) throws -> Box {
+        switch self {
+        case .display: return initial
+        case .window: return try Recording.windowBounds(window)
+        }
+    }
+
+    /// Displays constrain scene windows; window captures follow them.
+    func validateSceneWindow(_ number: UInt32, scene: Int, viewport: Box) throws {
+        guard case .display = self else { return }
+        let box = try Recording.windowBounds(number)
+        guard Self.centerInside(box, viewport: viewport) else {
+            throw Failure("Scene \(scene) window is outside the explicitly selected display.")
+        }
+    }
+
+    nonisolated static func centerInside(_ box: Box, viewport: Box) -> Bool {
+        let x = box.x + box.width / 2, y = box.y + box.height / 2
+        return (viewport.x...(viewport.x + viewport.width)).contains(x) &&
+            (viewport.y...(viewport.y + viewport.height)).contains(y)
+    }
 }
 
 @MainActor final class Recording: NSObject, SCStreamDelegate, SCStreamOutput, SCRecordingOutputDelegate {
@@ -13,25 +59,25 @@ struct CaptureFailure: LocalizedError {
     private var stream: SCStream?
     private var monitor: Timer?
     private let onFailure: @MainActor () -> Void
-    private let windowID: UInt32
-    private let displayID: UInt32?
+    let target: CaptureTarget
     private let filter: SCContentFilter
     private let configuration: SCStreamConfiguration
     let initialViewport: Box
     private(set) var epoch: Double = 0
     let source: URL
 
-    static func start(window: DesktopWindow, displayID: UInt32?, source: URL, onFailure: @escaping @MainActor () -> Void) async throws -> Recording {
+    static func start(window: DesktopWindow, target: CaptureTarget, source: URL, onFailure: @escaping @MainActor () -> Void) async throws -> Recording {
         guard CGPreflightScreenCaptureAccess() else { throw Failure("Showback needs Screen Recording permission. Enable it for the app that launches Showback in System Settings.") }
         let content = try await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: true)
-        guard let selected = content.windows.first(where: { $0.windowID == window.number }) else { throw Failure("The selected window is no longer available for capture.") }
         let filter: SCContentFilter
         let rect: CGRect
-        if let displayID {
-            guard let display = content.displays.first(where: { $0.displayID == displayID }) else { throw Failure("Selected display \(displayID) is unavailable.") }
+        switch target {
+        case .display(let id):
+            guard let display = content.displays.first(where: { $0.displayID == id }) else { throw Failure("Selected display \(id) is unavailable.") }
             rect = display.frame
             filter = SCContentFilter(display: display, excludingApplications: content.applications.filter { $0.processID == getpid() }, exceptingWindows: [])
-        } else {
+        case .window:
+            guard let selected = content.windows.first(where: { $0.windowID == window.number }) else { throw Failure("The selected window is no longer available for capture.") }
             rect = selected.frame
             filter = SCContentFilter(desktopIndependentWindow: selected)
         }
@@ -45,7 +91,7 @@ struct CaptureFailure: LocalizedError {
         config.showsCursor = false
         config.ignoreShadowsSingleWindow = true
         config.capturesAudio = false
-        let recording = Recording(windowID: window.number, displayID: displayID, filter: filter, configuration: config, viewport: viewport, source: source, onFailure: onFailure)
+        let recording = Recording(target: target, filter: filter, configuration: config, viewport: viewport, source: source, onFailure: onFailure)
         let outputConfig = SCRecordingOutputConfiguration()
         outputConfig.outputURL = source
         outputConfig.videoCodecType = .h264
@@ -59,7 +105,7 @@ struct CaptureFailure: LocalizedError {
             try await stream.startCapture()
             let deadline = ProcessInfo.processInfo.systemUptime + 10
             while !recording.state.ready {
-                try recording.check()
+                try recording.throwIfCaptureFailed()
                 guard ProcessInfo.processInfo.systemUptime < deadline else { throw Failure("Recording did not become ready within 10 seconds.") }
                 try await Task.sleep(nanoseconds: 20_000_000)
             }
@@ -68,9 +114,11 @@ struct CaptureFailure: LocalizedError {
                 MainActor.assumeIsolated {
                     guard let recording, recording.state.problem == nil else { return }
                     do {
-                        if let displayID {
-                            guard CGDisplayIsOnline(displayID) != 0 else { throw CaptureFailure(message: "The captured display disconnected.") }
-                        } else { _ = try recording.viewport() }
+                        switch recording.target {
+                        case .display(let id):
+                            guard CGDisplayIsOnline(id) != 0 else { throw CaptureFailure(message: "The captured display disconnected.") }
+                        case .window: _ = try recording.viewport()
+                        }
                     } catch {
                         recording.state.fail(error.localizedDescription)
                         recording.onFailure()
@@ -85,21 +133,26 @@ struct CaptureFailure: LocalizedError {
         }
     }
 
-    private init(windowID: UInt32, displayID: UInt32?, filter: SCContentFilter, configuration: SCStreamConfiguration, viewport: Box, source: URL, onFailure: @escaping @MainActor () -> Void) {
-        self.windowID = windowID; self.displayID = displayID; self.filter = filter; self.configuration = configuration
+    private init(target: CaptureTarget, filter: SCContentFilter, configuration: SCStreamConfiguration, viewport: Box, source: URL, onFailure: @escaping @MainActor () -> Void) {
+        self.target = target; self.filter = filter; self.configuration = configuration
         self.initialViewport = viewport; self.source = source
         self.onFailure = onFailure
     }
 
     var failureReason: String? { state.problem }
-    func check() throws { if let message = state.problem { throw CaptureFailure(message: message) } }
+    func throwIfCaptureFailed() throws { if let message = state.problem { throw CaptureFailure(message: message) } }
 
-    func viewport() throws -> Box {
-        if displayID != nil { return initialViewport }
-        let box = try Self.windowBounds(windowID)
-        guard abs(box.width - initialViewport.width) < 2, abs(box.height - initialViewport.height) < 2 else {
+    /// - Throws: `CaptureFailure` when the window resized beyond stream tolerance.
+    nonisolated static func checkResize(live: Box, initial: Box) throws {
+        guard abs(live.width - initial.width) < 2, abs(live.height - initial.height) < 2 else {
             throw CaptureFailure(message: "The window was resized during the demo. Restart with its new size.")
         }
+    }
+
+    func viewport() throws -> Box {
+        guard case .window(let id) = target else { return initialViewport }
+        let box = try target.liveViewport(window: id, initial: initialViewport)
+        try Self.checkResize(live: box, initial: initialViewport)
         return box
     }
 
@@ -113,7 +166,7 @@ struct CaptureFailure: LocalizedError {
     }
 
     func screenshot(to url: URL, pointer: PointerTimeline, at time: Double) async throws {
-        try check()
+        try throwIfCaptureFailed()
         let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
         let size = CGSize(width: image.width, height: image.height)
         var result = CIImage(cgImage: image)
@@ -127,14 +180,13 @@ struct CaptureFailure: LocalizedError {
         monitor?.invalidate(); monitor = nil
         guard let stream else { return }
         self.stream = nil
-        do { try await stream.stopCapture() }
-        catch { state.fail(error.localizedDescription) }
+        do { try await stream.stopCapture() } catch { state.fail(error.localizedDescription) }
         let deadline = ProcessInfo.processInfo.systemUptime + 10
         while !state.finished {
             guard ProcessInfo.processInfo.systemUptime < deadline else { throw Failure("Source video did not finalize. The partial file was preserved.") }
             try await Task.sleep(nanoseconds: 20_000_000)
         }
-        try check()
+        try throwIfCaptureFailed()
     }
 
     nonisolated func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {

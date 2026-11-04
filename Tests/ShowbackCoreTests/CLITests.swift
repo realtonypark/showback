@@ -19,9 +19,7 @@ final class CLITests: XCTestCase {
         let skill = CLI.skillURL(forApp: app)
         XCTAssertEqual(skill.path, "/absolute/.agents/skills/showback/SKILL.md")
 
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: root) }
+        let root = try TestFiles.tempDir(self)
         let invalid = root.appendingPathComponent("invalid")
         try Data("not a skill".utf8).write(to: invalid)
         XCTAssertThrowsError(try CLI.validateSkill(at: invalid))
@@ -42,14 +40,30 @@ final class CLITests: XCTestCase {
             #"{"data":{"permissions":{"accessibility":{"state":"denied"},"automation":{"state":"granted"},"screen_recording":{"state":"granted"}}}}"#,
             #"{"data":{"permissions":{"accessibility":{"state":"unknown"},"automation":{"state":"granted"},"screen_recording":{"state":"granted"}}}}"#,
             #"{"data":{"permissions":{"accessibility":{"state":"granted"},"automation":{"state":"granted"},"screen_recording":{"state":"unknown"}}}}"#,
-            "not json",
+            "not json"
         ] {
             XCTAssertFalse(CLI.requiredGrantsReady(output))
         }
     }
 
     func testValidateHelpDoesNotTreatFlagAsScript() async throws {
-        let handled = try await CLI.perform(["validate", "--help"])
-        XCTAssertTrue(handled)
+        try await CLI.dispatch(["validate", "--help"])
+    }
+
+    func testHelpListsEveryTopLevelCommand() {
+        for command in ["run", "validate", "settings", "doctor", "desktop", "install-assets", "--version"] {
+            XCTAssertTrue(CLI.help.contains(command), "help omits \(command)")
+        }
+    }
+
+    func testUnknownCommandThrowsFailure() async {
+        do {
+            try await CLI.dispatch(["frobnicate"])
+            XCTFail("expected unknown command to throw")
+        } catch let failure as Failure {
+            XCTAssertTrue(failure.message.contains("Unknown command"))
+        } catch {
+            XCTFail("wrong error type: \(error)")
+        }
     }
 }
