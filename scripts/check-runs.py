@@ -3,7 +3,9 @@
 import json
 import os
 from pathlib import Path
+import shutil
 import signal
+import stat
 import subprocess
 import sys
 import tempfile
@@ -23,9 +25,13 @@ with tempfile.TemporaryDirectory(prefix="showback-runs-") as temporary:
 
     blocked = script("speech-failure", [{"say": "This cannot be synthesized.", "actions": [{"click": {"role": "button", "name": "Increment"}}]}])
     blocked_bundle = root / "speech-failure.showback"
-    runtime = str(Path(os.environ["SHOWBACK_ASSETS"]) / "bin/pocket-tts")
-    policy = '(version 1)(allow default)(deny process-exec (literal ' + json.dumps(runtime) + '))'
-    synthesis = subprocess.run(["/usr/bin/sandbox-exec", "-p", policy, binary, "run", str(blocked), "--mute", "--out", str(blocked_bundle)], capture_output=True, text=True, timeout=25)
+    # sandbox-exec no longer enforces process-exec denial; revoke the exec bit on a private assets copy instead.
+    denied_assets = root / "denied-assets"
+    shutil.copytree(Path(os.environ["SHOWBACK_ASSETS"]).resolve(), denied_assets)
+    denied_runtime = denied_assets / "bin/pocket-tts"
+    denied_runtime.chmod(denied_runtime.stat().st_mode & ~stat.S_IXUSR & ~stat.S_IXGRP & ~stat.S_IXOTH)
+    denied_environment = dict(os.environ, SHOWBACK_ASSETS=str(denied_assets))
+    synthesis = subprocess.run([binary, "run", str(blocked), "--mute", "--out", str(blocked_bundle)], env=denied_environment, capture_output=True, text=True, timeout=25)
     state = json.loads((blocked_bundle / "run.json").read_text())
     assert synthesis.returncode == 1 and state["status"] == "failed", synthesis
     assert not state["events"] and not (blocked_bundle / "recording.mp4").exists(), state

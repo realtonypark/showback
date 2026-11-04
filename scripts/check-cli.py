@@ -23,7 +23,8 @@ with tempfile.TemporaryDirectory(prefix="showback-cli-") as temporary:
     assert invalid.returncode != 0 and "Unknown run option" in invalid.stderr, invalid
     if os.environ.get("SHOWBACK_ASSETS"):
         output = root / "failed.showback"
-        failed = subprocess.run([binary, "run", str(script), "--mute", "--out", str(output)], capture_output=True, text=True, timeout=15)
+        # Missing-app failure takes the full 15s window poll plus session overhead; allow headroom.
+        failed = subprocess.run([binary, "run", str(script), "--mute", "--out", str(output)], capture_output=True, text=True, timeout=30)
         assert failed.returncode != 0, failed
         result = json.loads((output / "run.json").read_text())
         assert result["status"] == "failed" and not result["mediaReady"], result

@@ -16,7 +16,8 @@ def digest(path):
 with tempfile.TemporaryDirectory(prefix="showback-install-") as temporary:
     prefix = Path(temporary)
     def install(command=None):
-        return subprocess.run((command or []) + [str(installer), str(prefix)], cwd=repo, capture_output=True, text=True, timeout=180)
+        # Installs run a utility-throttled release build; allow headroom past the ~150s observed worst case.
+        return subprocess.run((command or []) + [str(installer), str(prefix)], cwd=repo, capture_output=True, text=True, timeout=300)
 
     catalog = json.loads((repo / "Sources/ShowbackCore/Resources/assets.json").read_text())
     tokenizer = next(asset for asset in catalog["downloads"] if asset["id"] == "tokenizer")
