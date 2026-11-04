@@ -2,14 +2,17 @@ import Foundation
 import AVFoundation
 import CoreImage
 
-public struct NarrationSegment {
-    public let url: URL
-    public let start: Double
-    public let duration: Double
+struct NarrationSegment {
+    let url: URL
+    let start: Double
+    let duration: Double
 }
 
-public enum MediaExport {
-    public static func render(source: URL, output: URL, narration: [NarrationSegment], pointer: PointerTimeline) async throws {
+enum MediaExport {
+    /// - Throws: `Failure` for an existing destination, an unusable source, out-of-timeline narration, or duration
+    ///   mismatch; AVFoundation and file-system errors from track loading, `insertTimeRange`, `export(to:as:)`,
+    ///   and `moveItem` propagate unwrapped.
+    static func render(source: URL, output: URL, narration: [NarrationSegment], pointer: PointerTimeline) async throws {
         guard !FileManager.default.fileExists(atPath: output.path) else { throw Failure("Export destination already exists: \(output.path)") }
         let asset = AVURLAsset(url: source)
         let duration = try await asset.load(.duration)

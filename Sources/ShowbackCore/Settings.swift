@@ -13,13 +13,13 @@ import AppKit
 
     init(assets: Assets) throws {
         self.assets = assets
-        catalog = try assets.catalog
+        catalog = try Assets.loadCatalog()
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 210), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
         super.init()
         window.title = "Showback Settings"
         window.isReleasedWhenClosed = false
         window.delegate = self
-        let content = window.contentView!
+        guard let content = window.contentView else { throw Failure("Settings window has no content view.") }
         for (label, y) in [("Voice", 142.0), ("Model", 96.0)] {
             let field = NSTextField(labelWithString: label)
             field.frame = NSRect(x: 32, y: y, width: 90, height: 24)
@@ -71,8 +71,7 @@ import AppKit
         do {
             try SettingsStore().save(voice: catalog.voices[voices.indexOfSelectedItem].id, in: catalog)
             preview.isEnabled = modelReady
-        }
-        catch { showError(error) }
+        } catch { showError(error) }
     }
 
     @objc private func previewVoice() {

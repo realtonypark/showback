@@ -37,9 +37,13 @@ python3 scripts/check-cli.py
 | --- | --- |
 | Script validation | `Sources/ShowbackCore/Script.swift`, [scripts](docs/scripts.md) |
 | Desktop targets and session recovery | `Desktop.swift`, [desktop contracts](docs/desktop.md) |
-| Speech, model assets, voice settings | `Speech.swift`, `Assets.swift`, [speech](docs/speech.md) |
-| Capture, pointers, video export | `Recording.swift`, `Presentation.swift`, `MediaExport.swift`, [recording](docs/recording.md) |
+| Speech, model assets, voice settings | `Speech.swift`, `Assets.swift`, `AudioPlayback.swift`, [speech](docs/speech.md) |
+| Capture, pointers, video export | `Recording.swift`, `Presentation.swift`, `StopControl.swift`, `MediaExport.swift`, [recording](docs/recording.md) |
 | Sequencing and durable results | `Runner.swift`, `RunBundle.swift`, [run results](docs/runs.md) |
+| CLI surface | `CLI.swift` |
+| App lifecycle | `Sources/Showback/Entry.swift`, `Application.swift` |
+| Settings | `Settings.swift`, `SettingsStore.swift` |
+| Shared infrastructure | `Paths.swift`, `Process.swift`, `Failure.swift`, `RunLock.swift` |
 | Installation | `scripts/install.sh`, [installation](docs/installation.md) |
 
 Use plain values between concerns. Keep rules in one owning module, validate untrusted input at boundaries, and prefer native frameworks over new dependencies. Do not introduce automatic action retries, guessed target coordinates, implicit whole-display capture, or cloud speech fallback.

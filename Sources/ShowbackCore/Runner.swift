@@ -20,105 +20,35 @@ import AppKit
         var problem: String?
         var step = "Preflight"
         var epoch = ProcessInfo.processInfo.systemUptime
-        func time() -> Double { max(0, ProcessInfo.processInfo.systemUptime - epoch) }
         do {
             try assets.verifyInstallation()
             try await desktop.start(recording: !options.liveOnly)
-            let voice = try SettingsStore().voice(in: assets.catalog)
+            let voice = try SettingsStore().voice(in: Assets.loadCatalog())
             step = "Narration preparation"
             let clips = try await Speech(assets: assets).prepare(script.scenes, voice: voice, in: bundle.root.appendingPathComponent("narration")) { print($0); fflush(stdout) }
             try Task.checkCancellation()
             step = "Capture setup"
             try await desktop.focus()
-            let window = try desktop.selected()
-            let initialViewport: Box
-            if let displayID = script.displayID {
-                let rect = CGDisplayBounds(displayID)
-                guard rect.width > 0, rect.height > 0 else { throw Failure("Selected display is unavailable.") }
-                initialViewport = Box(x: rect.minX, y: rect.minY, width: rect.width, height: rect.height)
-            } else { initialViewport = try Recording.windowBounds(window.number) }
+            let window = try desktop.currentWindow
+            let (target, initialViewport) = try CaptureTarget.resolve(displayID: script.displayID, windowID: window.number)
             presentation = Presentation(viewport: initialViewport, epoch: epoch)
             stop = StopControl(viewport: initialViewport, onStop: onStop)
             if !options.liveOnly {
-                recording = try await Recording.start(window: window, displayID: script.displayID, source: bundle.root.appendingPathComponent("recording.mp4"), onFailure: onStop)
-                epoch = recording!.epoch
+                let started = try await Recording.start(window: window, target: target, source: bundle.root.appendingPathComponent("recording.mp4"), onFailure: onStop)
+                recording = started
+                epoch = started.epoch
             } else { epoch = ProcessInfo.processInfo.systemUptime }
             let viewport: Box
-            if let recording { viewport = try recording.viewport() }
-            else { viewport = initialViewport }
+            if let recording { viewport = try recording.viewport() } else { viewport = initialViewport }
             presentation?.begin(at: epoch)
             try bundle.start(target: ["app": script.app, "window": window.title, "windowID": window.number,
-                                      "capture": script.displayID.map { "display:\($0)" } ?? "window"], epoch: epoch)
+                                      "capture": target.label], epoch: epoch)
             print("Presenting \(script.title)"); fflush(stdout)
+            let context = SceneContext(script: script, clips: clips, desktop: desktop, recording: recording,
+                                       presentation: presentation, bundle: bundle, viewport: viewport,
+                                       options: options, epoch: epoch, target: target)
             for (index, scene) in script.scenes.enumerated() {
-                step = "Scene \(index + 1), window selection"
-                print("Scene \(index + 1)/\(script.scenes.count)"); fflush(stdout)
-                try Task.checkCancellation()
-                try recording?.check()
-                let sceneApp = scene.app ?? script.app
-                let sceneTitle = scene.windowTitle ?? (sceneApp == script.app ? script.windowTitle : nil)
-                if desktop.app != sceneApp || desktop.title != sceneTitle {
-                    try await desktop.select(app: sceneApp, title: sceneTitle)
-                    try await desktop.focus()
-                }
-                let currentWindow = try desktop.selected()
-                if script.displayID != nil {
-                    let box = try Recording.windowBounds(currentWindow.number)
-                    let x = box.x + box.width / 2, y = box.y + box.height / 2
-                    guard (viewport.x...(viewport.x + viewport.width)).contains(x), (viewport.y...(viewport.y + viewport.height)).contains(y) else {
-                        throw Failure("Scene \(index + 1) window is outside the explicitly selected display.")
-                    }
-                }
-                try bundle.record("scene", at: time(), scene: index + 1, data: ["say": scene.say ?? "", "app": sceneApp, "windowID": currentWindow.number])
-                step = "Scene \(index + 1), narration"
-                let playback = try clips[index].map { try AudioPlayback(clip: $0, epoch: epoch, mute: options.mute) }
-                if let playback {
-                    segments.append(playback.segment)
-                    try bundle.record("narration-start", at: playback.segment.start, scene: index + 1,
-                                      data: ["clock": playback.usesDeviceClock ? "audio-device" : "monotonic", "muted": options.mute])
-                }
-                let narration = Task { @MainActor in try await playback?.wait() }
-                do {
-                    try await withTaskCancellationHandler(operation: {
-                        for (actionIndex, action) in scene.actions.enumerated() {
-                            step = "Scene \(index + 1), action \(actionIndex + 1)"
-                            try Task.checkCancellation()
-                            try recording?.check()
-                            let result = try await desktop.execute(action) { target in
-                                let current = try recording?.viewport() ?? (script.displayID == nil ? Recording.windowBounds(currentWindow.number) : viewport)
-                                try await presentation?.point(target: target, viewport: current)
-                                try bundle.record("point", at: time(), scene: index + 1, data: ["x": target.x, "y": target.y, "width": target.width, "height": target.height])
-                            }
-                            try bundle.record("action", at: time(), scene: index + 1, data: result)
-                        }
-                        if let expected = scene.expect {
-                            step = "Scene \(index + 1), expect"
-                            let observed = try await desktop.waitFor(expected)
-                            try bundle.record("checked", at: time(), scene: index + 1, data: observed)
-                        }
-                        if let absent = scene.absent {
-                            step = "Scene \(index + 1), absent"
-                            let observed = try await desktop.waitForAbsent(absent)
-                            try bundle.record("absent-checked", at: time(), scene: index + 1, data: observed)
-                        }
-                        step = "Scene \(index + 1), narration"
-                        try await narration.value
-                    }, onCancel: { narration.cancel() })
-                } catch {
-                    narration.cancel(); playback?.stop()
-                    _ = try? await narration.value
-                    if let last = segments.last, playback != nil {
-                        segments.removeLast()
-                        let duration = min(last.duration, max(0, time() - last.start))
-                        if duration > 0.01 { segments.append(NarrationSegment(url: last.url, start: last.start, duration: duration)) }
-                    }
-                    throw error
-                }
-                if let recording, !scene.actions.isEmpty || scene.expect != nil || scene.absent != nil {
-                    step = "Scene \(index + 1), screenshot"
-                    try await recording.screenshot(to: bundle.root.appendingPathComponent(String(format: "frames/scene-%02d.png", index + 1)),
-                                                   pointer: presentation!.timeline, at: time())
-                }
+                try await runScene(index: index, scene: scene, context: context, step: &step, segments: &segments)
             }
         } catch {
             if let message = recording?.failureReason ?? (error as? CaptureFailure)?.message {
@@ -130,11 +60,135 @@ import AppKit
         }
         let pointer = presentation?.timeline ?? PointerTimeline()
         presentation?.close(); stop?.close()
-        do { try bundle.media(pointer: pointer, narration: segments) }
-        catch {
+        do { try bundle.attachMedia(pointer: pointer, narration: segments) } catch {
             status = status == .cancelled ? .cancelled : .failed
             problem = [problem, error.localizedDescription].compactMap { $0 }.joined(separator: "\n")
         }
+        let outcome = await finalize(recording: recording, desktop: desktop, bundle: bundle, segments: segments,
+                                     pointer: pointer, status: status, problem: problem)
+        let mediaReady = outcome.mediaReady
+        status = outcome.status
+        problem = outcome.problem
+        if Task.isCancelled, status == .completed { status = .cancelled; problem = "Cancelled." }
+        try bundle.finish(status, error: problem, mediaReady: mediaReady)
+        print("\(status.rawValue): \(bundle.root.path)"); fflush(stdout)
+        if let video = bundle.video {
+            print("\(status == .completed ? "Video" : "Partial video"): \(video.path)")
+        }
+        print("Summary: \(bundle.root.appendingPathComponent("summary.md").path)"); fflush(stdout)
+        if let problem { FileHandle.standardError.write(Data((problem + "\n").utf8)) }
+        return status
+    }
+
+    nonisolated static func resolveSceneTarget(scene: Scene, scriptApp: String, scriptWindow: String?) -> (app: String, title: String?) {
+        let app = scene.app ?? scriptApp
+        return (app, scene.windowTitle ?? (app == scriptApp ? scriptWindow : nil))
+    }
+
+    nonisolated static func trimmedSegment(_ last: NarrationSegment, at time: Double) -> NarrationSegment? {
+        let duration = min(last.duration, max(0, time - last.start))
+        return duration > 0.01 ? NarrationSegment(url: last.url, start: last.start, duration: duration) : nil
+    }
+
+    // Internal so RunnerTests can drive scene orchestration without a display or installed assets.
+    struct SceneContext {
+        let script: DemoScript
+        let clips: [SpeechClip?]
+        let desktop: Desktop
+        let recording: Recording?
+        let presentation: Presentation?
+        let bundle: RunBundle
+        let viewport: Box
+        let options: RunOptions
+        let epoch: Double
+        let target: CaptureTarget
+
+        func time() -> Double { max(0, ProcessInfo.processInfo.systemUptime - epoch) }
+    }
+
+    func runScene(index: Int, scene: Scene, context: SceneContext, step: inout String, segments: inout [NarrationSegment]) async throws {
+        let (currentWindow, playback) = try await prepareScene(index: index, scene: scene, context: context, step: &step, segments: &segments)
+        try await runActions(index: index, scene: scene, context: context, currentWindow: currentWindow, playback: playback, step: &step, segments: &segments)
+        if let recording = context.recording, let presentation = context.presentation,
+           !scene.actions.isEmpty || scene.expect != nil || scene.absent != nil {
+            step = "Scene \(index + 1), screenshot"
+            try await recording.screenshot(to: context.bundle.root.appendingPathComponent(String(format: "frames/scene-%02d.png", index + 1)),
+                                           pointer: presentation.timeline, at: context.time())
+        }
+    }
+
+    func prepareScene(index: Int, scene: Scene, context: SceneContext, step: inout String, segments: inout [NarrationSegment]) async throws -> (DesktopWindow, AudioPlayback?) {
+        let script = context.script
+        let desktop = context.desktop
+        let recording = context.recording
+        let bundle = context.bundle
+        step = "Scene \(index + 1), window selection"
+        print("Scene \(index + 1)/\(script.scenes.count)"); fflush(stdout)
+        try Task.checkCancellation()
+        try recording?.throwIfCaptureFailed()
+        let (sceneApp, sceneTitle) = Self.resolveSceneTarget(scene: scene, scriptApp: script.app, scriptWindow: script.windowTitle)
+        if desktop.app != sceneApp || desktop.title != sceneTitle {
+            try await desktop.resolveWindow(app: sceneApp, title: sceneTitle)
+            try await desktop.focus()
+        }
+        let currentWindow = try desktop.currentWindow
+        try context.target.validateSceneWindow(currentWindow.number, scene: index + 1, viewport: context.viewport)
+        try bundle.record(.scene, at: context.time(), scene: index + 1, data: ["say": scene.say ?? "", "app": sceneApp, "windowID": currentWindow.number])
+        step = "Scene \(index + 1), narration"
+        let playback = try context.clips[index].map { try AudioPlayback(clip: $0, epoch: context.epoch, mute: context.options.mute) }
+        if let playback {
+            segments.append(playback.segment)
+            try bundle.record(.narrationStart, at: playback.segment.start, scene: index + 1,
+                              data: ["clock": playback.usesDeviceClock ? "audio-device" : "monotonic", "muted": context.options.mute])
+        }
+        return (currentWindow, playback)
+    }
+
+    func runActions(index: Int, scene: Scene, context: SceneContext, currentWindow: DesktopWindow, playback: AudioPlayback?, step: inout String, segments: inout [NarrationSegment]) async throws {
+        let desktop = context.desktop
+        let recording = context.recording
+        let presentation = context.presentation
+        let bundle = context.bundle
+        let narration = Task { @MainActor in try await playback?.wait() }
+        do {
+            try await withTaskCancellationHandler(operation: {
+                for (actionIndex, action) in scene.actions.enumerated() {
+                    step = "Scene \(index + 1), action \(actionIndex + 1)"
+                    try Task.checkCancellation()
+                    try recording?.throwIfCaptureFailed()
+                    let result = try await desktop.execute(action) { target in
+                        let current = try recording?.viewport() ?? context.target.liveViewport(window: currentWindow.number, initial: context.viewport)
+                        try await presentation?.point(target: target, viewport: current)
+                        try bundle.record(.point, at: context.time(), scene: index + 1, data: ["x": target.x, "y": target.y, "width": target.width, "height": target.height])
+                    }
+                    try bundle.record(.action, at: context.time(), scene: index + 1, data: result)
+                }
+                if let expected = scene.expect {
+                    step = "Scene \(index + 1), expect"
+                    let observed = try await desktop.waitFor(expected)
+                    try bundle.record(.checked, at: context.time(), scene: index + 1, data: observed)
+                }
+                if let absent = scene.absent {
+                    step = "Scene \(index + 1), absent"
+                    let observed = try await desktop.waitForAbsent(absent)
+                    try bundle.record(.absentChecked, at: context.time(), scene: index + 1, data: observed)
+                }
+                step = "Scene \(index + 1), narration"
+                try await narration.value
+            }, onCancel: { narration.cancel() })
+        } catch {
+            narration.cancel(); playback?.stop()
+            _ = try? await narration.value
+            if let last = segments.last, playback != nil {
+                segments.removeLast()
+                if let trimmed = Self.trimmedSegment(last, at: context.time()) { segments.append(trimmed) }
+            }
+            throw error
+        }
+    }
+
+    private func finalize(recording: Recording?, desktop: Desktop, bundle: RunBundle, segments: [NarrationSegment],
+                          pointer: PointerTimeline, status: RunStatus, problem: String?) async -> (mediaReady: Bool, status: RunStatus, problem: String?) {
         // Cleanup must finish even when the presentation task was cancelled.
         let cleanup = Task { @MainActor () -> (Bool, String?) in
             var mediaReady = false
@@ -151,18 +205,12 @@ import AppKit
             return (mediaReady, error)
         }
         let (mediaReady, cleanupError) = await cleanup.value
+        var status = status
+        var problem = problem
         if let cleanupError {
             status = status == .cancelled ? .cancelled : .failed
             if problem != cleanupError { problem = [problem, cleanupError].compactMap { $0 }.joined(separator: "\n") }
         }
-        if Task.isCancelled, status == .completed { status = .cancelled; problem = "Cancelled." }
-        try bundle.finish(status, error: problem, mediaReady: mediaReady)
-        print("\(status.rawValue): \(bundle.root.path)"); fflush(stdout)
-        if let video = bundle.video {
-            print("\(status == .completed ? "Video" : "Partial video"): \(video.path)")
-        }
-        print("Summary: \(bundle.root.appendingPathComponent("summary.md").path)"); fflush(stdout)
-        if let problem { FileHandle.standardError.write(Data((problem + "\n").utf8)) }
-        return status
+        return (mediaReady, status, problem)
     }
 }

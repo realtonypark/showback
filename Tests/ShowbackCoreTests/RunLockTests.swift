@@ -16,6 +16,15 @@ final class RunLockTests: XCTestCase {
         })
         XCTAssertNotEqual(fcntl(descriptor, F_GETFD) & FD_CLOEXEC, 0)
     }
+    func testDirectoryFailureNamesParentPath() throws {
+        let blocker = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try Data().write(to: blocker)
+        defer { try? FileManager.default.removeItem(at: blocker) }
+        XCTAssertThrowsError(try RunLock(url: blocker.appendingPathComponent("run.lock"))) { error in
+            XCTAssertTrue(error is Failure, "\(type(of: error))")
+            XCTAssertTrue(error.localizedDescription.contains(blocker.path), error.localizedDescription)
+        }
+    }
     func testSecondRunCannotTakeDesktopWhileFirstOwnsIt() throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: file) }

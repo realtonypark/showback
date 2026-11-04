@@ -4,9 +4,7 @@ import XCTest
 final class RunBundleTests: XCTestCase {
     func testFailureAndCancellationRemainVisibleInSavedResult() throws {
         for status in [RunStatus.failed, .cancelled] {
-            let parent = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-            try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
-            defer { try? FileManager.default.removeItem(at: parent) }
+            let parent = try TestFiles.tempDir(self)
             let script = parent.appendingPathComponent("demo.json")
             try Data("{}".utf8).write(to: script)
             let bundle = try RunBundle(root: parent.appendingPathComponent("run.showback"), script: script, title: "Example", recording: true)
@@ -20,9 +18,7 @@ final class RunBundleTests: XCTestCase {
         }
     }
     func testFinalVideoIsExplicitForCompletedAndPartialRuns() throws {
-        let parent = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: parent) }
+        let parent = try TestFiles.tempDir(self)
         let script = parent.appendingPathComponent("demo.json")
         try Data("{}".utf8).write(to: script)
         for status in [RunStatus.completed, .failed, .cancelled] {
@@ -38,16 +34,37 @@ final class RunBundleTests: XCTestCase {
         }
     }
     func testFailedInitializationRemovesOnlyNewBundle() throws {
-        let parent = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        defer { try? FileManager.default.removeItem(at: parent) }
+        let parent = try TestFiles.tempDir(self)
         let root = parent.appendingPathComponent("run.showback")
         XCTAssertThrowsError(try RunBundle(root: root, script: parent.appendingPathComponent("missing.json"), title: "Example", recording: true))
         XCTAssertFalse(FileManager.default.fileExists(atPath: root.path))
     }
+    func testStartRejectsNonSerializableTarget() throws {
+        let parent = try TestFiles.tempDir(self)
+        let script = parent.appendingPathComponent("demo.json")
+        try Data("{}".utf8).write(to: script)
+        let bundle = try RunBundle(root: parent.appendingPathComponent("run.showback"), script: script, title: "Example", recording: true)
+        final class NotJSON {}
+        XCTAssertThrowsError(try bundle.start(target: ["window": NotJSON()], epoch: 0)) { error in
+            XCTAssertTrue(error is Failure, "\(type(of: error))")
+            XCTAssertTrue(error.localizedDescription.contains("target"), error.localizedDescription)
+        }
+    }
+    func testRecordRejectsNonSerializablePayloadWithEventContext() throws {
+        let parent = try TestFiles.tempDir(self)
+        let script = parent.appendingPathComponent("demo.json")
+        try Data("{}".utf8).write(to: script)
+        let bundle = try RunBundle(root: parent.appendingPathComponent("run.showback"), script: script, title: "Example", recording: true)
+        final class NotJSON {}
+        XCTAssertThrowsError(try bundle.record(.action, at: 1, scene: 2, data: NotJSON())) { error in
+            XCTAssertTrue(error is Failure, "\(type(of: error))")
+            XCTAssertTrue(error.localizedDescription.contains("action"), error.localizedDescription)
+            XCTAssertTrue(error.localizedDescription.contains("scene 2"), error.localizedDescription)
+        }
+    }
+
     func testRefusesToOverwriteExistingBundle() throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: root) }
+        let root = try TestFiles.tempDir(self)
         let file = root.appendingPathComponent("keep")
         try Data("original".utf8).write(to: file)
         XCTAssertThrowsError(try RunBundle(root: root, script: file, title: "Example", recording: true))

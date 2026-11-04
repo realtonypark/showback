@@ -132,7 +132,8 @@ Start with [CONTRIBUTING.md](CONTRIBUTING.md): build commands, test levels, modu
 ## Project notes
 
 - [Verification evidence and platform coverage](docs/verification.md)
-- [Architecture](CONTEXT.md) and [implementation decisions](docs/implementation-decisions.md)
+- [Language glossary](CONTEXT.md) and [implementation decisions](docs/implementation-decisions.md)
+- [Module ownership](CONTRIBUTING.md#make-a-change) and [original design](docs/plans/2026-11-01-showback-design.md)
 - [Desktop](docs/desktop.md), [speech](docs/speech.md), [recording](docs/recording.md), and [run results](docs/runs.md)
 - [Maintainer release checklist](docs/releasing.md)
 

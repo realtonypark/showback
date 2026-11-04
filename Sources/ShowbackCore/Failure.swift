@@ -1,7 +1,12 @@
 import Foundation
 
-public struct Failure: LocalizedError {
-    public let message: String
-    public init(_ message: String) { self.message = message }
-    public var errorDescription: String? { message }
+struct Failure: LocalizedError {
+    let message: String
+    init(_ message: String) { self.message = message }
+    var errorDescription: String? { message }
+}
+
+/// A forwarded subprocess exit code. Carries no message: output was already forwarded.
+struct ExitStatus: Error {
+    let code: Int32
 }
