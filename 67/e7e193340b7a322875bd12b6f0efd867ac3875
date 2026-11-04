@@ -1,0 +1,53 @@
+CONTRIBUTING.md
+  s_e3bb0daeaf52f5::t_9b0f602b3098e6 40-41,43-46
+Sources/Showback/Entry.swift
+  s_e3bb0daeaf52f5::t_764607ef766abe 6
+Sources/ShowbackCore/Application.swift
+  s_e3bb0daeaf52f5::t_1f6c2ef4b1a22d 4,7,9-10,17-41,43,48-49,53-68,71-72,75-84,89-92
+Sources/ShowbackCore/CLI.swift
+  s_e3bb0daeaf52f5::t_52532e14d32423 3-7,34-37,44,46,55-87,90,118-119,125,127,134,142-143
+Sources/ShowbackCore/Desktop.swift
+  s_e3bb0daeaf52f5::t_541d6e8b028395 3-8,19-23,26-60,64-65,69,73-74,81,84,86,89,92,95,97-98,102,104-105,110-111,114,128-133,142,147-148,150-152,156-161,164-166,169-177,179-181,183-190,192-197,199-207,218-235,238-239,244,246-251,254,261,266,271,273,285-288,290-291,296,299
+Sources/ShowbackCore/Failure.swift
+  s_e3bb0daeaf52f5::t_ef003aa54959ec 3-11
+Sources/ShowbackCore/Presentation.swift
+  s_e3bb0daeaf52f5::t_ba8490b5bc73c5 3,10,19-20
+Sources/ShowbackCore/Recording.swift
+  s_e3bb0daeaf52f5::t_706cece6d85e19 8,12-56,62,69,74-76,79-80,94,108,117-121,136-137,143,145-147,150-155,169,183,189
+Sources/ShowbackCore/RunBundle.swift
+  s_e3bb0daeaf52f5::t_e33660070307d5 3,5-12,17,21-22,27-29,31-32,34,39,44,46-48,55-57,59-64,69,76-77,94-96,98
+Sources/ShowbackCore/Runner.swift
+  s_e3bb0daeaf52f5::t_0428ab70faec04 26,32-33,37-39,42,45,47-49,51,63,67-191,208-209,214
+Sources/ShowbackCore/Settings.swift
+  s_e3bb0daeaf52f5::t_0ed4f3ef0a1a01 16,22,74
+Sources/ShowbackCore/Speech.swift
+  s_e3bb0daeaf52f5::t_de279624963d84 4-6,9-13,15-20,30,38
+Tests/ShowbackCoreTests/ApplicationTests.swift
+  s_e3bb0daeaf52f5::t_1ad3176a7b7ae8 1-78
+Tests/ShowbackCoreTests/CLITests.swift
+  s_e3bb0daeaf52f5::t_435b3c338ddcb7 22,43,50-67
+Tests/ShowbackCoreTests/MediaTests.swift
+  s_e3bb0daeaf52f5::t_59fe6c6e0c89e4 16,18-24,26-28,30-31,34-35,44,49-51,56-65,67-68,70-71,92-94,105-107,112-118,121-123
+Tests/ShowbackCoreTests/PathsTests.swift
+  s_e3bb0daeaf52f5::t_d0eb1591dfa98d 1-30
+Tests/ShowbackCoreTests/RunBundleTests.swift
+  s_e3bb0daeaf52f5::t_814c8ad66e0a8e 7,21,37,42-65,67
+Tests/ShowbackCoreTests/TestEnv.swift
+  s_e3bb0daeaf52f5::t_e571db735d8708 1-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "67e7e193340b7a322875bd12b6f0efd867ac3875",
+  "prompts": {},
+  "sessions": {
+    "s_e3bb0daeaf52f5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1a34e-39ff-76c3-9a1a-f03f2a52d9a1",
+        "model": "autorouter"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
