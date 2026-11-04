@@ -1,0 +1,21 @@
+Sources/ShowbackCore/Desktop.swift
+  s_e3bb0daeaf52f5::t_9f92fd96b10928 95-96,98,106
+Tests/ShowbackCoreTests/RunnerTests.swift
+  s_e3bb0daeaf52f5::t_10c05c910c3216 8,13-14,31-32,34,111,114-118
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4338b0386d86907a071e56d96874e80b255cf147",
+  "prompts": {},
+  "sessions": {
+    "s_e3bb0daeaf52f5": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1a34e-39ff-76c3-9a1a-f03f2a52d9a1",
+        "model": "autorouter"
+      },
+      "human_author": "realtonypark <realtonypark@gmail.com>"
+    }
+  }
+}
