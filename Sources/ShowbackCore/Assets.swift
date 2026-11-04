@@ -30,11 +30,11 @@ struct Assets {
         try JSONDecoder().decode(AssetCatalog.self, from: Data(contentsOf: resource("assets", "json")))
     }
 
-    /// - Throws: `Failure` when no asset definition matches the id, or the asset has no executable.
     private static func installs(_ download: Download) -> Bool {
         download.arch == nil || download.arch == Self.architecture
     }
 
+    /// - Throws: `Failure` when no asset definition matches the id, or the asset has no executable.
     func url(for id: String) throws -> URL {
         guard let asset = try Self.loadCatalog().downloads.first(where: { $0.id == id && Self.installs($0) }) else {
             throw Failure("No installed asset definition for \(id) on \(Self.architecture).")

@@ -24,7 +24,7 @@ final class MediaTests: XCTestCase {
         ])
         writer.add(input)
         guard writer.startWriting() else {
-            throw XCTSkip("h264 encoder unavailable: \(writer.error?.localizedDescription ?? "unknown error")")
+            throw Failure("Fixture writer failed to start: \(writer.error?.localizedDescription ?? "unknown error")")
         }
         writer.startSession(atSourceTime: .zero)
         for index in 0..<20 {

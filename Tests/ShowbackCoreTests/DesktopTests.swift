@@ -68,6 +68,18 @@ final class DesktopTests: XCTestCase {
         try await desktop.resolveWindow(app: "Example", title: "Account")
         XCTAssertEqual(desktop.window?.id, "w-1")
     }
+    func testResolveWindowRethrowsSelectionErrorOnTimeout() async throws {
+        let root = try TestFiles.tempDir(self)
+        let desktop = try FakeDesktop.make(root: root, branches: """
+          list-windows*) printf '%s' '{"ok":true,"data":[]}' ;;
+          """)
+        do {
+            try await desktop.resolveWindow(app: "Missing", title: nil, timeout: 0.3)
+            XCTFail("Timed-out selection succeeded without a window")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("found 0"), error.localizedDescription)
+        }
+    }
     func testExecuteMapsGeneralVerbsToDesktopCommands() async throws {
         let root = try TestFiles.tempDir(self)
         let log = root.appendingPathComponent("calls")

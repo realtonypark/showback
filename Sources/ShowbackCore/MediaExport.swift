@@ -9,7 +9,9 @@ struct NarrationSegment {
 }
 
 enum MediaExport {
-    /// - Throws: `Failure` for an existing destination, an unusable source, out-of-timeline narration, or export errors.
+    /// - Throws: `Failure` for an existing destination, an unusable source, out-of-timeline narration, or duration
+    ///   mismatch; AVFoundation and file-system errors from track loading, `insertTimeRange`, `export(to:as:)`,
+    ///   and `moveItem` propagate unwrapped.
     static func render(source: URL, output: URL, narration: [NarrationSegment], pointer: PointerTimeline) async throws {
         guard !FileManager.default.fileExists(atPath: output.path) else { throw Failure("Export destination already exists: \(output.path)") }
         let asset = AVURLAsset(url: source)

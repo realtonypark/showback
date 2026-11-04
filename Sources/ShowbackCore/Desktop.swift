@@ -92,9 +92,10 @@ final class Desktop {
         try await resolveWindow(app: app, title: title)
     }
 
-    func resolveWindow(app: String, title: String?) async throws {
+    /// - Throws: `Failure` when no matching window appears within the timeout, or selection is ambiguous.
+    func resolveWindow(app: String, title: String?, timeout: Double = 15) async throws {
         // ponytail: poll for a slow launch; fail fast only on ambiguity, which waiting cannot fix.
-        _ = try await poll(timeout: 15, interval: 250_000_000) { _ in
+        _ = try await poll(timeout: timeout, interval: 250_000_000) { _ in
             let windows = try await invokeRuntime(["list-windows", "--app", app]) as? [[String: Any]] ?? []
             do {
                 let selected = try Self.selectWindow(windows, app: app, title: title)
@@ -102,7 +103,7 @@ final class Desktop {
                 return ()
             } catch {
                 guard Self.matchingWindows(windows, app: app, title: title).count <= 1 else { throw PollFatal(cause: error) }
-                return nil
+                throw error
             }
         }
     }

@@ -5,19 +5,13 @@ import XCTest
 final class RunnerTests: XCTestCase {
     @MainActor
     func testRunSceneDrivesNarrationActionsAndEvents() async throws {
-        guard let info = (CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]])?.first(where: {
-            ($0[kCGWindowNumber as String] as? UInt32).map { $0 > 0 } == true
-        }),
-              let number = info[kCGWindowNumber as String] as? UInt32,
-              let raw = info[kCGWindowBounds as String] as? [String: Any],
-              let x = raw["X"] as? Double, let y = raw["Y"] as? Double,
-              let width = raw["Width"] as? Double, let height = raw["Height"] as? Double, width > 0, height > 0 else {
+        guard let live = TestFiles.onscreenWindow() else {
             throw XCTSkip("No onscreen windows for the scene-orchestration test.")
         }
         let root = try TestFiles.tempDir(self)
         let window = String(decoding: try JSONSerialization.data(withJSONObject: ["ok": true, "data": [
-            ["id": "w-\(number)", "title": "Account", "app_name": "Example", "accessible": true,
-             "bounds": ["x": x, "y": y, "width": width, "height": height]]
+            ["id": "w-\(live.number)", "title": "Account", "app_name": "Example", "accessible": true,
+             "bounds": ["x": live.box.x, "y": live.box.y, "width": live.box.width, "height": live.box.height]]
         ]]), as: UTF8.self)
         let desktop = try FakeDesktop.make(root: root, branches: """
           list-windows*) printf '%s' '\(window)' ;;
@@ -34,9 +28,10 @@ final class RunnerTests: XCTestCase {
         let epoch = ProcessInfo.processInfo.systemUptime
         try bundle.start(target: ["app": script.app], epoch: epoch)
         let scene = try XCTUnwrap(script.scenes.first)
+        let box = live.box
+        let viewport = Box(x: box.x - 1000, y: box.y - 1000, width: box.width + 2000, height: box.height + 2000)
         let context = Runner.SceneContext(script: script, clips: [SpeechClip(url: wav, duration: 0.1)], desktop: desktop,
-                                          recording: nil, presentation: nil, bundle: bundle,
-                                          viewport: Box(x: x - 1000, y: y - 1000, width: width + 2000, height: height + 2000),
+                                          recording: nil, presentation: nil, bundle: bundle, viewport: viewport,
                                           options: RunOptions(script: scriptURL, output: bundle.root, liveOnly: true, mute: true),
                                           epoch: epoch, target: .display(id: 0))
         var step = "", segments: [NarrationSegment] = []
@@ -113,20 +108,14 @@ final class RunnerTests: XCTestCase {
 
     @MainActor
     func testWindowBoundsReadsLiveWindow() throws {
-        guard let info = (CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]])?.first(where: {
-            ($0[kCGWindowNumber as String] as? UInt32).map { $0 > 0 } == true
-        }),
-              let number = info[kCGWindowNumber as String] as? UInt32,
-              let raw = info[kCGWindowBounds as String] as? [String: Any],
-              let x = raw["X"] as? Double, let y = raw["Y"] as? Double,
-              let width = raw["Width"] as? Double, let height = raw["Height"] as? Double else {
+        guard let window = TestFiles.onscreenWindow() else {
             throw XCTSkip("No onscreen windows for the live-bounds test.")
         }
-        let live = try Recording.windowBounds(number)
-        XCTAssertEqual(live.x, x, accuracy: 2)
-        XCTAssertEqual(live.y, y, accuracy: 2)
-        XCTAssertEqual(live.width, width, accuracy: 2)
-        XCTAssertEqual(live.height, height, accuracy: 2)
+        let live = try Recording.windowBounds(window.number)
+        XCTAssertEqual(live.x, window.box.x, accuracy: 2)
+        XCTAssertEqual(live.y, window.box.y, accuracy: 2)
+        XCTAssertEqual(live.width, window.box.width, accuracy: 2)
+        XCTAssertEqual(live.height, window.box.height, accuracy: 2)
         XCTAssertThrowsError(try Recording.windowBounds(UInt32.max)) { error in
             XCTAssertTrue(error.localizedDescription.contains("hidden or closed"), error.localizedDescription)
         }

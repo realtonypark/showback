@@ -29,6 +29,8 @@ final class AudioPlaybackTests: XCTestCase {
                                          epoch: ProcessInfo.processInfo.systemUptime, mute: true)
         let start = ProcessInfo.processInfo.systemUptime
         try await playback.wait()
-        XCTAssertLessThan(ProcessInfo.processInfo.systemUptime - start, 5.0)
+        let elapsed = ProcessInfo.processInfo.systemUptime - start
+        XCTAssertLessThan(elapsed, 5.0)
+        XCTAssertGreaterThan(elapsed, 0.05)
     }
 }
